@@ -4,37 +4,8 @@ import "../App.css"; // importa tus estilos generales
 function MenuPrincipal() {
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Menú lateral */}
-      <aside className="w-56 bg-white p-4 shadow-lg flex flex-col justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-700 mb-4">FactuCelest</h2>
-          <ul className="space-y-2 text-gray-700">
-            <li>📊 Dashboard</li>
-            <li>🧾 Facturas</li>
-            <li>👥 Clientes</li>
-            <li>💰 Pagos</li>
-            <li>📦 Productos</li>
-            <li>📈 Reportes</li>
-          </ul>
-        </div>
-        <div className="text-gray-500 border-t pt-2">⚙️ Configuración</div>
-      </aside>
-
       {/* Contenido principal */}
       <main className="flex-1 flex flex-col">
-        {/* Barra superior */}
-        <header className="bg-white shadow p-4 flex justify-between items-center">
-          <input
-            type="text"
-            placeholder="🔍 Buscador"
-            className="border rounded-lg px-4 py-1 w-64"
-          />
-          <div className="flex gap-6 text-gray-700">
-            <span>🔔 Notificaciones</span>
-            <span>👤 Perfil</span>
-          </div>
-        </header>
-
         {/* Contenido */}
         <div className="p-6 grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1 overflow-auto">
           {/* Tarjetas */}
@@ -123,11 +94,6 @@ function MenuPrincipal() {
             </table>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="text-center text-gray-500 text-sm py-2 border-t">
-          © 2025 FactuCelest — v1.0.0
-        </footer>
       </main>
     </div>
   );

@@ -1,4 +1,4 @@
-import { getAllP } from "../controller/productoController.js";
+import { getAllP } from "../controller/ProductoController.js";
 import { Router } from "express";
 const router = Router();
 

@@ -1,7 +1,11 @@
-export default function Footer() {
+import React from "react";
+
+const Footer = () => {
   return (
-    <footer className="w-full text-center py-4 bg-gray-300 text-gray-600 text-sm absolute bottom-0">
-      ® FactuCelest | Todos los derechos reservados
+    <footer className="bg-gray-200 text-center py-2 text-sm w-full">
+      © 2025 FactuCelest — v1.0.0
     </footer>
   );
-}
+};
+
+export default Footer;
