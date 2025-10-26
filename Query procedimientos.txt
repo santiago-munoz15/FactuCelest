@@ -1,0 +1,151 @@
+Use FactuCeleste;
+GO
+
+CREATE PROCEDURE spListarProductos
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	SELECT
+		IdProducto,
+		NombreProducto,
+		Descripcion,
+		PrecioVenta,
+		PrecioCompra,
+		IdCategoriaFK,
+		TaxIdFK
+	From Productos
+	ORDER BY IdProducto DESC;
+END;
+GO
+
+ALTER PROCEDURE [dbo].[spListarProductos]
+AS
+BEGIN
+    SELECT 
+        p.IdProducto,
+        p.NombreProducto,
+        p.Descripcion,
+        p.PrecioVenta,
+        p.PrecioCompra,
+        c.NombreCategoria,
+        pr.NombreEmpresa AS NombreProveedor
+    FROM Productos p
+    INNER JOIN Categorias c ON p.IdCategoriaFK = c.IdCategoria
+    INNER JOIN Proveedores pr ON p.TaxIdFK = pr.TaxId;
+END
+
+EXEC spListarProductos;
+
+USE FactuCeleste;
+GO
+
+CREATE PROCEDURE spInsertarProducto
+	@NombreProducto VARCHAR(100),
+	@Descripcion VARCHAR(255),
+	@PrecioVenta DECIMAL(10,2),
+	@PrecioCompra DECIMAL(10,2),
+	@IdCategoriaFK INT,
+	@TaxIdFK INT
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	INSERT INTO Productos(
+	NombreProducto,
+	Descripcion,
+	PrecioVenta,
+	PrecioCompra,
+	IdCategoriaFK,
+	TaxIdFK
+	)
+	VALUES (
+	@NombreProducto,
+	@Descripcion,
+	@PrecioVenta,
+	@PrecioCompra,
+	@IdCategoriaFK,
+	@TaxIdFK
+	);
+END;
+GO
+
+USE FactuCeleste;
+GO
+
+CREATE PROCEDURE spActualizarProducto
+    @IdProducto INT,
+    @NombreProducto VARCHAR(100),
+    @Descripcion VARCHAR(255),
+    @PrecioVenta DECIMAL(10,2),
+    @PrecioCompra DECIMAL(10,2),
+    @IdCategoriaFK INT,
+    @TaxIdFK INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Productos
+    SET 
+        NombreProducto = @NombreProducto,
+        Descripcion = @Descripcion,
+        PrecioVenta = @PrecioVenta,
+        PrecioCompra = @PrecioCompra,
+        IdCategoriaFK = @IdCategoriaFK,
+        TaxIdFK = @TaxIdFK
+    WHERE 
+        IdProducto = @IdProducto;
+END;
+GO
+
+USE FactuCeleste;
+GO
+
+CREATE PROCEDURE spEliminarProducto
+    @IdProducto INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DELETE FROM Productos
+    WHERE IdProducto = @IdProducto;
+END;
+GO
+
+USE FactuCeleste;
+GO
+
+CREATE PROCEDURE spConsultarProductoPorId
+    @IdProducto INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        IdProducto,
+        NombreProducto,
+        Descripcion,
+        PrecioVenta,
+        PrecioCompra,
+        IdCategoriaFK,
+        TaxIdFK
+    FROM Productos
+    WHERE IdProducto = @IdProducto;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE spListarCategorias
+AS
+BEGIN
+    SELECT IdCategoria, NombreCategoria
+    FROM Categorias;
+END
+GO
+
+CREATE OR ALTER PROCEDURE spListarProveedor
+AS
+BEGIN
+    SELECT TaxId, NombreEmpresa
+    FROM Proveedores;
+END
+GO
