@@ -28,7 +28,9 @@ const Productos = () => {
 
   const fetchProductos = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/listarp");
+      const res = await axios.get(
+        "http://localhost:3000/api/productos/listarp"
+      );
       setProductos(res.data);
       setLoading(false);
     } catch (error) {
@@ -47,7 +49,10 @@ const Productos = () => {
   const handleGuardar = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:3000/insertarp", nuevoProducto);
+      await axios.post(
+        "http://localhost:3000/api/productos/insertarp",
+        nuevoProducto
+      );
       alert("✅ Producto agregado correctamente");
       setShowModal(false);
       setNuevoProducto({
@@ -84,7 +89,7 @@ const Productos = () => {
     try {
       console.log("ID del producto:", productoEdit.IdProducto);
       await axios.put(
-        `http://localhost:3000/actualizarp/${productoEdit.IdProducto}`,
+        `http://localhost:3000/api/productos/actualizarp/${productoEdit.IdProducto}`,
         productoEdit
       );
       alert("✅ Producto actualizado correctamente");
@@ -100,7 +105,7 @@ const Productos = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("¿Seguro que deseas eliminar este producto?")) return;
     try {
-      await axios.delete(`http://localhost:3000/eliminarp/${id}`);
+      await axios.delete(`http://localhost:3000/api/productos/eliminarp/${id}`);
       setProductos((prev) => prev.filter((p) => p.IdProducto !== id));
       alert("✅ Producto eliminado correctamente");
     } catch (error) {
