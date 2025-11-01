@@ -8,7 +8,7 @@ function Sidebar() {
         <h2 className="text-xl font-bold text-gray-700 mb-4">FactuCelest</h2>
         <ul className="space-y-2 text-gray-700">
           <li>
-            <Link to="/" className="block hover:text-blue-600">
+            <Link to="/menu" className="block hover:text-blue-600">
               📊 MenuPrincipal
             </Link>
           </li>
