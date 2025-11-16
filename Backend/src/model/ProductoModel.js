@@ -7,6 +7,16 @@ const getAllProductos = async () => {
   return resultado.recordset;
 };
 
+// 🔹 Buscar productos por Referencia o Descripción
+const buscarProductos = async (busqueda = "") => {
+  const con = await getConnection();
+  const resultado = await con
+    .request()
+    .input("Busqueda", sql.VarChar(100), busqueda)
+    .execute("spBuscarProductos");
+  return resultado.recordset;
+};
+
 // 🔹 Insertar un producto nuevo
 const getInsertarProducto = async (producto) => {
   const con = await getConnection();
@@ -62,12 +72,12 @@ const getDeleteProducto = async (id) => {
     .input("IdProducto", sql.Int, id)
     .execute("spEliminarProducto");
 
-  return resultado.rowsAffected; // opcional
+  return resultado.rowsAffected;
 };
 
-// ✅ Exportación correcta y uniforme
 export {
   getAllProductos,
+  buscarProductos,
   getInsertarProducto,
   getUpdateProducto,
   getDeleteProducto,

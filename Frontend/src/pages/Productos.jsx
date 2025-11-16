@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import {
+  showSuccessAlert,
+  showErrorAlert,
+  showConfirmAlert,
+} from "../utils/sweetAlertHelper";
 
 const Productos = () => {
   const [productos, setProductos] = useState([]);
+  const [productosFiltrados, setProductosFiltrados] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState("");
 
   // Modal de agregar
   const [showModal, setShowModal] = useState(false);
@@ -32,10 +39,29 @@ const Productos = () => {
         "http://localhost:3000/api/productos/listarp"
       );
       setProductos(res.data);
+      setProductosFiltrados(res.data);
       setLoading(false);
     } catch (error) {
       console.error("Error al obtener productos:", error);
+      showErrorAlert("Error", "No se pudieron cargar los productos");
       setLoading(false);
+    }
+  };
+
+  // 🔹 Filtrar productos por Referencia o Descripción usando stored procedure
+  const handleBusqueda = async (texto) => {
+    setBusqueda(texto);
+
+    try {
+      const res = await axios.get(
+        `http://localhost:3000/api/productos/buscar?busqueda=${encodeURIComponent(
+          texto
+        )}`
+      );
+      setProductosFiltrados(res.data);
+    } catch (error) {
+      console.error("Error al buscar productos:", error);
+      showErrorAlert("Error", "No se pudieron buscar los productos");
     }
   };
 
@@ -53,7 +79,7 @@ const Productos = () => {
         "http://localhost:3000/api/productos/insertarp",
         nuevoProducto
       );
-      alert("✅ Producto agregado correctamente");
+      await showSuccessAlert("¡Éxito!", "Producto agregado correctamente");
       setShowModal(false);
       setNuevoProducto({
         Referencia: "",
@@ -67,7 +93,7 @@ const Productos = () => {
       fetchProductos();
     } catch (error) {
       console.error("Error al insertar producto:", error);
-      alert("❌ No se pudo agregar el producto");
+      showErrorAlert("Error", "No se pudo agregar el producto");
     }
   };
 
@@ -92,100 +118,178 @@ const Productos = () => {
         `http://localhost:3000/api/productos/actualizarp/${productoEdit.IdProducto}`,
         productoEdit
       );
-      alert("✅ Producto actualizado correctamente");
+      await showSuccessAlert(
+        "¡Actualizado!",
+        "Producto actualizado correctamente"
+      );
       setShowEditModal(false);
       fetchProductos();
     } catch (error) {
       console.error("Error al actualizar producto:", error);
-      alert("❌ No se pudo actualizar el producto");
+      showErrorAlert("Error", "No se pudo actualizar el producto");
     }
   };
 
   // 🔹 Eliminar producto
   const handleDelete = async (id) => {
-    if (!window.confirm("¿Seguro que deseas eliminar este producto?")) return;
+    const result = await showConfirmAlert(
+      "¿Eliminar producto?",
+      "Esta acción no se puede deshacer"
+    );
+
+    if (!result.isConfirmed) return;
+
     try {
       await axios.delete(`http://localhost:3000/api/productos/eliminarp/${id}`);
       setProductos((prev) => prev.filter((p) => p.IdProducto !== id));
-      alert("✅ Producto eliminado correctamente");
+      showSuccessAlert("¡Eliminado!", "Producto eliminado correctamente");
     } catch (error) {
       console.error("Error eliminando producto:", error);
-      alert("❌ No se pudo eliminar el producto");
+      showErrorAlert("Error", "No se pudo eliminar el producto");
     }
   };
 
   if (loading)
-    return <p className="p-6 text-gray-600">⏳ Cargando productos...</p>;
+    return (
+      <p className="p-6 text-gray-600 dark:text-gray-300">
+        ⏳ Cargando productos...
+      </p>
+    );
 
   return (
     <div className="p-6">
       {/* 🔹 Título + Botón agregar */}
       <div className="flex justify-between mb-4 items-center">
-        <h1 className="text-2xl font-bold text-gray-800">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
           📦 Gestión de Productos
         </h1>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+          className="bg-gradient-to-r from-cyan-500 to-cyan-700 text-white px-4 py-2 rounded-lg hover:from-cyan-600 hover:to-cyan-800 transition-all shadow-lg font-semibold"
         >
           ➕ Nuevo Producto
         </button>
       </div>
 
+      {/* 🔹 Buscador */}
+      <div className="mb-6">
+        <input
+          type="text"
+          value={busqueda}
+          onChange={(e) => handleBusqueda(e.target.value)}
+          placeholder="🔍 Buscar por Referencia o Descripción..."
+          className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+        />
+        {busqueda && (
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            📊 Mostrando {productosFiltrados.length} de {productos.length}{" "}
+            productos
+          </p>
+        )}
+      </div>
+
       {/* 🔹 Tabla de productos */}
-      <table className="min-w-full bg-white rounded-lg shadow-md overflow-hidden">
-        <thead>
-          <tr className="bg-gray-200 text-left">
-            <th className="p-3">Referencia</th>
-            <th className="p-3">Descripción</th>
-            <th className="p-3">Talla</th>
-            <th className="p-3">Precio Venta</th>
-            <th className="p-3">Precio Compra</th>
-            <th className="p-3">Categoría</th>
-            <th className="p-3">Proveedor</th>
-            <th className="p-3 text-center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {productos.map((p) => (
-            <tr
-              key={p.IdProducto}
-              className="border-b hover:bg-gray-50 transition"
-            >
-              <td className="p-3">{p.Referencia}</td>
-              <td className="p-3">{p.Descripcion}</td>
-              <td className="p-3">{p.Talla}</td>
-              <td className="p-3">${p.PrecioVenta.toLocaleString()}</td>
-              <td className="p-3">${p.PrecioCompra.toLocaleString()}</td>
-              <td className="p-3">{p.NombreCategoria}</td>
-              <td className="p-3">{p.NombreProveedor}</td>
-              <td className="p-3 flex justify-center gap-2">
-                <button
-                  onClick={() => handleEdit(p)}
-                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
-                >
-                  ✏️ Editar
-                </button>
-                <button
-                  onClick={() => handleDelete(p.IdProducto)}
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                >
-                  🗑 Eliminar
-                </button>
-              </td>
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+          <thead>
+            <tr className="bg-gray-200 dark:bg-gray-700 text-left">
+              <th className="p-3 text-gray-700 dark:text-gray-200">
+                Referencia
+              </th>
+              <th className="p-3 text-gray-700 dark:text-gray-200">
+                Descripción
+              </th>
+              <th className="p-3 text-gray-700 dark:text-gray-200">Talla</th>
+              <th className="p-3 text-gray-700 dark:text-gray-200">
+                Precio Venta
+              </th>
+              <th className="p-3 text-gray-700 dark:text-gray-200">
+                Precio Compra
+              </th>
+              <th className="p-3 text-gray-700 dark:text-gray-200">
+                Categoría
+              </th>
+              <th className="p-3 text-gray-700 dark:text-gray-200">
+                Proveedor
+              </th>
+              <th className="p-3 text-center text-gray-700 dark:text-gray-200">
+                Acciones
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {productosFiltrados.length === 0 ? (
+              <tr>
+                <td
+                  colSpan="8"
+                  className="p-8 text-center text-gray-500 dark:text-gray-400"
+                >
+                  <p className="text-4xl mb-2">🔍</p>
+                  <p>No se encontraron productos</p>
+                </td>
+              </tr>
+            ) : (
+              productosFiltrados.map((p) => (
+                <tr
+                  key={p.IdProducto}
+                  className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                >
+                  <td className="p-3 text-gray-800 dark:text-gray-200">
+                    {p.Referencia}
+                  </td>
+                  <td className="p-3 text-gray-800 dark:text-gray-200">
+                    {p.Descripcion}
+                  </td>
+                  <td className="p-3 text-gray-800 dark:text-gray-200">
+                    {p.Talla}
+                  </td>
+                  <td className="p-3 text-gray-800 dark:text-gray-200">
+                    ${p.PrecioVenta.toLocaleString()}
+                  </td>
+                  <td className="p-3 text-gray-800 dark:text-gray-200">
+                    ${p.PrecioCompra.toLocaleString()}
+                  </td>
+                  <td className="p-3 text-gray-800 dark:text-gray-200">
+                    {p.NombreCategoria}
+                  </td>
+                  <td className="p-3 text-gray-800 dark:text-gray-200">
+                    {p.NombreProveedor}
+                  </td>
+                  <td className="p-3 flex justify-center gap-2">
+                    <button
+                      onClick={() => handleEdit(p)}
+                      className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition"
+                    >
+                      ✏️ Editar
+                    </button>
+                    <button
+                      onClick={() => handleDelete(p.IdProducto)}
+                      className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition"
+                    >
+                      🗑 Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {/* 🔹 Modal para agregar producto */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-96 p-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-800 text-center">
+        <div
+          className="fixed inset-0 flex justify-center items-center z-50 animate-fadeIn"
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-96 p-8 transform animate-slideIn">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100 text-center">
               ➕ Nuevo Producto
             </h2>
-            <form onSubmit={handleGuardar} className="space-y-3">
+            <form onSubmit={handleGuardar} className="space-y-4">
               {[
                 "Referencia",
                 "Descripcion",
@@ -206,21 +310,21 @@ const Productos = () => {
                   placeholder={campo}
                   value={nuevoProducto[campo]}
                   onChange={handleChange}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   required={campo !== "Talla"}
                 />
               ))}
-              <div className="flex justify-between mt-4">
+              <div className="flex justify-between mt-6 gap-3">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition"
+                  className="flex-1 bg-gray-400 dark:bg-gray-600 text-white px-4 py-3 rounded-xl hover:bg-gray-500 dark:hover:bg-gray-700 transition font-semibold"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                  className="flex-1 bg-gradient-to-r from-cyan-500 to-cyan-700 text-white px-4 py-3 rounded-xl hover:from-cyan-600 hover:to-cyan-800 transition shadow-lg font-semibold"
                 >
                   Guardar
                 </button>
@@ -232,12 +336,18 @@ const Productos = () => {
 
       {/* 🔹 Modal para editar producto */}
       {showEditModal && productoEdit && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-96 p-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-800 text-center">
+        <div
+          className="fixed inset-0 flex justify-center items-center z-50 animate-fadeIn"
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-96 p-8 transform animate-slideIn">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100 text-center">
               ✏️ Editar Producto
             </h2>
-            <form onSubmit={handleActualizar} className="space-y-3">
+            <form onSubmit={handleActualizar} className="space-y-4">
               {[
                 "Referencia",
                 "Descripcion",
@@ -258,21 +368,21 @@ const Productos = () => {
                   placeholder={campo}
                   value={productoEdit[campo]}
                   onChange={handleEditChange}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   required={campo !== "Talla"}
                 />
               ))}
-              <div className="flex justify-between mt-4">
+              <div className="flex justify-between mt-6 gap-3">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition"
+                  className="flex-1 bg-gray-400 dark:bg-gray-600 text-white px-4 py-3 rounded-xl hover:bg-gray-500 dark:hover:bg-gray-700 transition font-semibold"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-700 text-white px-4 py-3 rounded-xl hover:from-blue-600 hover:to-blue-800 transition shadow-lg font-semibold"
                 >
                   Actualizar
                 </button>

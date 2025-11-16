@@ -2,12 +2,14 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { getConnection } from "./config/db.js";
+import ClienteRoutes from "./routes/ClienteRoutes.js";
 
 // 🔹 Importar rutas
 import ProductoRouter from "./routes/ProductoRoutes.js";
 import CategoriaRouter from "./routes/CategoriaRouter.js";
 import ProveedorRouter from "./routes/ProveedorRouter.js";
-import UsuarioRouter from "./routes/UsuarioRoutes.js"; // 👈 Nueva ruta para login/registro
+import UsuarioRouter from "./routes/UsuarioRoutes.js";
+import FacturaRouter from "./routes/FacturaRoutes.js";
 
 const app = express();
 dotenv.config();
@@ -19,7 +21,9 @@ app.use(express.json());
 app.use("/api/productos", ProductoRouter);
 app.use("/api/categorias", CategoriaRouter);
 app.use("/api/proveedores", ProveedorRouter);
-app.use("/api/usuarios", UsuarioRouter); // 👈 Aquí estará el login/registro/verificación
+app.use("/api/usuarios", UsuarioRouter);
+app.use("/api/clientes", ClienteRoutes);
+app.use("/api/facturas", FacturaRouter);
 
 // 🔹 Iniciar servidor
 app.listen(process.env.PORT, () => {

@@ -1,41 +1,44 @@
-En su computador donde quieren que guarde el proyecto, dan click derecho open git bash here, y pega este comando
+1.En su computador donde quieren que guarde el proyecto, dan click derecho open git bash here, y pega este comando
 git clone https://github.com/santiago-munoz15/FactuCelest.git
 
-Luego ejecutar los siguientes comandos, entran al proyecto:
+2.Luego ejecutar los siguientes comandos, entran al proyecto:
 cd FactuCelest
 
-Y se cambian a la rama dev:
+3.Y se cambian a la rama dev:
 git checkout dev
 
-Abrir el proyecto en Visual Studio Code:
+4.Abrir el proyecto en Visual Studio Code:
 code .
 
-Abrir terminal y entrar a la carpeta Frontend
+5.Abrir terminal y entrar a la carpeta Frontend
 cd Frontend
 
-Instalar dependencias:
+6.Instalar dependencias:
 npm i axios react-router-dom
 
-Ejecutar el proyecto:
+7.Ejecutar el proyecto Frontend:
 npm run dev
 
-Abrir otra terminal para ejecutar el backend
+8.Abrir otra terminal para ejecutar el backend
 cd Backend
 
-Instalar dependencias:
+9.Instalar dependencias:
 npm init -y
-
 npm i express mssql cors dotenv nodemon
 npm install nodemailer bcryptjs
 
-Crear archivo .env
+10.Crear archivo .env en la carpeta Backend
+
 PORT=3000
 USER=tdea
 PASSWORD=123
 SERVER=localhost
 DATABASE=FactuCeleste
 
-Ejecutar el proyecto:
+EMAIL_USER = zantii95@gmail.com
+EMAIL_PASS = cvvp ucuy biaz dtlt
+
+11.Ejecutar el proyecto Backend:
 npm run dev
 
 
