@@ -7,12 +7,12 @@ export const loginUsuario = async (correo, contrasena) => {
     .request()
     .input("Correo", sql.VarChar, correo)
     .input("Contrasena", sql.VarChar, contrasena)
-    .execute("spLoginUsuario"); // Nombre del SP en tu BD
+    .execute("spLoginUsuario");
 
   return result.recordset;
 };
 
-// 🔹 Registrar usuario (primera parte, sin verificar aún)
+// 🔹 Registrar usuario (sin verificar)
 export const registrarUsuario = async (
   nombre,
   correo,
@@ -26,7 +26,7 @@ export const registrarUsuario = async (
     .input("Correo", sql.VarChar, correo)
     .input("Contrasena", sql.VarChar, contrasena)
     .input("CodigoVerificacion", sql.VarChar, codigoVerificacion)
-    .execute("spRegistrarUsuario"); // Nombre del SP correspondiente
+    .execute("spRegistrarUsuario");
 
   return result.recordset;
 };
@@ -38,7 +38,7 @@ export const verificarCodigo = async (correo, codigo) => {
     .request()
     .input("Correo", sql.VarChar, correo)
     .input("Codigo", sql.VarChar, codigo)
-    .execute("spVerificarCodigo"); // Nombre del SP correspondiente
+    .execute("spVerificarCodigo");
 
   return result.recordset;
 };
