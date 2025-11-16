@@ -1,5 +1,6 @@
 import {
   getAllProductos,
+  buscarProductos,
   getUpdateProducto,
   getInsertarProducto,
   getDeleteProducto,
@@ -11,6 +12,18 @@ const getAllP = async (req, res) => {
     const productos = await getAllProductos();
     res.json(productos);
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 🔹 Buscar productos por Referencia o Descripción
+const buscarP = async (req, res) => {
+  try {
+    const { busqueda } = req.query;
+    const productos = await buscarProductos(busqueda || "");
+    res.json(productos);
+  } catch (error) {
+    console.error("❌ Error al buscar productos:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -98,4 +111,4 @@ const deleteP = async (req, res) => {
   }
 };
 
-export { getAllP, insertarP as getInsertarProducto, updateP, deleteP };
+export { getAllP, buscarP, insertarP as getInsertarProducto, updateP, deleteP };

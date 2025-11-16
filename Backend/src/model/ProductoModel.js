@@ -2,14 +2,24 @@ import { sql, getConnection } from "../config/db.js";
 
 // 🔹 Obtener todos los productos
 const getAllProductos = async () => {
-  const con = await getConnection;
+  const con = await getConnection();
   const resultado = await con.request().execute("spListarProductos");
+  return resultado.recordset;
+};
+
+// 🔹 Buscar productos por Referencia o Descripción
+const buscarProductos = async (busqueda = "") => {
+  const con = await getConnection();
+  const resultado = await con
+    .request()
+    .input("Busqueda", sql.VarChar(100), busqueda)
+    .execute("spBuscarProductos");
   return resultado.recordset;
 };
 
 // 🔹 Insertar un producto nuevo
 const getInsertarProducto = async (producto) => {
-  const con = await getConnection;
+  const con = await getConnection();
   const resultado = await con
     .request()
     .input("Referencia", sql.VarChar(100), producto.Referencia)
@@ -26,7 +36,7 @@ const getInsertarProducto = async (producto) => {
 
 // 🔹 Actualizar un producto existente
 const getUpdateProducto = async (id, data) => {
-  const con = await getConnection;
+  const con = await getConnection();
   const {
     Referencia,
     Descripcion,
@@ -56,18 +66,18 @@ const getUpdateProducto = async (id, data) => {
 
 // 🔹 Eliminar producto
 const getDeleteProducto = async (id) => {
-  const con = await getConnection;
+  const con = await getConnection();
   const resultado = await con
     .request()
     .input("IdProducto", sql.Int, id)
     .execute("spEliminarProducto");
 
-  return resultado.rowsAffected; // opcional
+  return resultado.rowsAffected;
 };
 
-// ✅ Exportación correcta y uniforme
 export {
   getAllProductos,
+  buscarProductos,
   getInsertarProducto,
   getUpdateProducto,
   getDeleteProducto,
