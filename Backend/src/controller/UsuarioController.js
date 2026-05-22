@@ -1,19 +1,13 @@
 import { getConnection, sql } from "../config/db.js";
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 
-const crearTransportadorCorreo = () =>
-  nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || "smtp.gmail.com",
-    port: Number(process.env.EMAIL_PORT || 587),
-    secure: String(process.env.EMAIL_SECURE || "false") === "true",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
-  });
+const sendgridConfigurado = Boolean(
+  process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL
+);
+
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
 // ✅ LOGIN
 export const Login = async (req, res) => {
@@ -70,12 +64,17 @@ export const Registrar = async (req, res) => {
       .input("Codigo", sql.VarChar(10), codigoVerificacion) // ✅ importante
       .execute("spRegistrarUsuario");
 
-    try {
-      const transporter = crearTransportadorCorreo();
+    if (!sendgridConfigurado) {
+      return res.status(201).json({
+        message:
+          "✅ Usuario registrado correctamente. SendGrid no está configurado en este entorno.",
+      });
+    }
 
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
+    try {
+      await sgMail.send({
         to: email,
+        from: process.env.SENDGRID_FROM_EMAIL,
         subject: "Código de verificación - FactuCelest",
         html: `
           <h2>Hola ${nombre},</h2>
@@ -90,10 +89,13 @@ export const Registrar = async (req, res) => {
           "✅ Usuario registrado. Se envió un código de verificación al correo.",
       });
     } catch (correoError) {
-      console.error("⚠️ No se pudo enviar el correo de verificación:", correoError);
+      console.warn(
+        "⚠️ No se pudo enviar el correo de verificación con SendGrid:",
+        correoError?.response?.body || correoError.message || correoError
+      );
       return res.status(201).json({
         message:
-          "✅ Usuario registrado correctamente, pero no se pudo enviar el correo de verificación. Revisa la configuración SMTP.",
+          "✅ Usuario registrado correctamente. No se pudo enviar el correo de verificación con SendGrid.",
       });
     }
   } catch (error) {
