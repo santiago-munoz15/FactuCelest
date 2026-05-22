@@ -201,7 +201,7 @@ export default function Facturacion() {
     <div className="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-3xl transition-colors duration-300">
       <div className="mb-6">
         <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-          🧾 Módulo de Facturación
+          🧾 Facturación
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
           Registra nuevas facturas y gestiona clientes

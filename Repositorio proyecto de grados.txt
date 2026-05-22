@@ -15,6 +15,7 @@ cd Frontend
 
 6.Instalar dependencias:
 npm i axios react-router-dom
+npm install -D tailwindcss postcss
 
 7.Ejecutar el proyecto Frontend:
 npm run dev
