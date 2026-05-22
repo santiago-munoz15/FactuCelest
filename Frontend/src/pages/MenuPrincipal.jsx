@@ -77,10 +77,10 @@ function MenuPrincipal() {
       : 0;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6">
       {/* Header del Dashboard */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
           📊 Dashboard
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
@@ -88,8 +88,32 @@ function MenuPrincipal() {
         </p>
       </div>
 
-      {/* Tarjetas de Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Tarjetas de Estadísticas - móvil */}
+      <div className="grid grid-cols-2 gap-3 md:hidden">
+        <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-700 p-4 text-white shadow-lg">
+          <p className="text-xs text-cyan-100 mb-2">Hoy</p>
+          <p className="text-xl font-bold">$0</p>
+          <p className="text-xs text-cyan-100 mt-1">Ventas</p>
+        </div>
+        <div className="rounded-2xl bg-gradient-to-br from-orange-500 to-orange-700 p-4 text-white shadow-lg">
+          <p className="text-xs text-orange-100 mb-2">Pendiente</p>
+          <p className="text-xl font-bold">2</p>
+          <p className="text-xs text-orange-100 mt-1">Facturas</p>
+        </div>
+        <div className="rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 p-4 text-white shadow-lg">
+          <p className="text-xs text-purple-100 mb-2">Total</p>
+          <p className="text-xl font-bold">0</p>
+          <p className="text-xs text-purple-100 mt-1">Productos</p>
+        </div>
+        <div className="rounded-2xl bg-gradient-to-br from-green-500 to-green-700 p-4 text-white shadow-lg">
+          <p className="text-xs text-green-100 mb-2">Activos</p>
+          <p className="text-xl font-bold">0</p>
+          <p className="text-xs text-green-100 mt-1">Clientes</p>
+        </div>
+      </div>
+
+      {/* Tarjetas de Estadísticas - escritorio */}
+      <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         {/* Card 1 - Ventas de Hoy */}
         <div className="bg-gradient-to-br from-cyan-500 to-cyan-700 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
@@ -147,10 +171,92 @@ function MenuPrincipal() {
         </div>
       </div>
 
-      {/* Gráfico y Tabla */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Resumen compacto móvil */}
+      <div className="grid gap-4 md:hidden">
+        <div className="app-mobile-card">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-800 dark:text-gray-100">
+              Ventas Mensuales
+            </h3>
+            <span className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold">
+              {obtenerMesActual()}
+            </span>
+          </div>
+          {loadingVentas ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              ⏳ Cargando resumen...
+            </p>
+          ) : ventasMensuales.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No hay ventas este mes.
+            </p>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                  ${ventasMensuales.reduce((acc, venta) => acc + venta.TotalVentas, 0).toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {ventasMensuales.length} días con ventas
+                </p>
+              </div>
+              <div className="text-4xl">📊</div>
+            </div>
+          )}
+        </div>
+
+        <div className="app-mobile-card">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-800 dark:text-gray-100">
+              Últimas Facturas
+            </h3>
+            <span className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold">
+              {facturas.length} recientes
+            </span>
+          </div>
+
+          {loading ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              ⏳ Cargando facturas...
+            </p>
+          ) : facturas.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No hay facturas registradas.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {facturas.slice(0, 3).map((factura) => (
+                <div
+                  key={factura.IdFactura}
+                  className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-700/50"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-gray-800 dark:text-gray-100">
+                        #{factura.IdFactura}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {factura.NombreCliente}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatearFecha(factura.Fecha)}
+                      </p>
+                    </div>
+                    <p className="font-bold text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
+                      ${factura.Total.toLocaleString("es-CO")}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Gráfico y Tabla - escritorio */}
+      <div className="hidden md:grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Resumen Ventas Mensuales */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-colors duration-300">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 md:p-6 transition-colors duration-300 overflow-hidden">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
               Ventas Mensuales
@@ -176,7 +282,7 @@ function MenuPrincipal() {
               </div>
             </div>
           ) : (
-            <div className="h-64 flex items-end justify-around gap-2 px-2 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-900 rounded-xl p-4">
+            <div className="h-64 flex items-end justify-around gap-2 px-2 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-900 rounded-xl p-4 overflow-x-auto">
               {ventasMensuales.map((venta) => {
                 const altura =
                   maxVenta > 0 ? (venta.TotalVentas / maxVenta) * 100 : 0;
@@ -214,7 +320,7 @@ function MenuPrincipal() {
         </div>
 
         {/* Últimas Facturas */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-colors duration-300">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 md:p-6 transition-colors duration-300 overflow-hidden">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
               Últimas Facturas
@@ -223,7 +329,7 @@ function MenuPrincipal() {
               Ver todas →
             </button>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-4 md:mx-0">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b-2 border-gray-200 dark:border-gray-700">

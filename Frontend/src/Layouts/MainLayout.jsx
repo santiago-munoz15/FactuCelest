@@ -6,6 +6,7 @@ import Footer from "../components/Footer";
 
 const MainLayout = ({ children }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -30,23 +31,46 @@ const MainLayout = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-800 overflow-hidden transition-colors duration-300">
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
+      {mobileMenuOpen && (
+        <button
+          type="button"
+          aria-label="Cerrar menú lateral"
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+        />
+      )}
+
       {/* Menú lateral */}
-      <Sidebar />
+      <Sidebar
+        mobileOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      />
 
       {/* Contenido principal */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full md:pl-0">
         {/* Barra superior */}
-        <header className="bg-white dark:bg-gray-900 shadow p-4 flex justify-between items-center relative transition-colors duration-300">
-          {/* Buscador */}
-          <input
-            type="text"
-            placeholder="🔍 Buscador"
-            className="border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-1 w-64 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-cyan-500 dark:focus:border-cyan-400 transition-colors"
-          />
+        <header className="bg-white dark:bg-gray-900 shadow px-4 py-3 flex flex-col gap-3 md:flex-row md:justify-between md:items-center relative transition-colors duration-300">
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-700 dark:text-gray-200"
+              aria-label="Abrir menú lateral"
+            >
+              ☰
+            </button>
+
+            {/* Buscador */}
+            <input
+              type="text"
+              placeholder="🔍 Buscador"
+              className="w-full md:w-64 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-cyan-500 dark:focus:border-cyan-400 transition-colors"
+            />
+          </div>
 
           {/* Sección derecha (Notificaciones + Perfil) */}
-          <div className="flex gap-6 text-gray-700 dark:text-gray-300 items-center">
+          <div className="flex flex-wrap gap-3 md:gap-6 text-gray-700 dark:text-gray-300 items-center justify-between md:justify-end w-full md:w-auto">
             <span className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer transition-colors">
               🔔 Notificaciones
             </span>
@@ -78,7 +102,7 @@ const MainLayout = ({ children }) => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6 bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
           {children}
         </main>
 

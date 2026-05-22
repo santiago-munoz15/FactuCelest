@@ -151,15 +151,15 @@ const Productos = () => {
     );
 
   return (
-    <div className="p-6">
+    <div className="app-page">
       {/* 🔹 Título + Botón agregar */}
-      <div className="flex justify-between mb-4 items-center">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+      <div className="flex flex-col sm:flex-row sm:justify-between mb-4 items-stretch sm:items-center gap-3">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100">
           📦 Gestión de Productos
         </h1>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-gradient-to-r from-cyan-500 to-cyan-700 text-white px-4 py-2 rounded-lg hover:from-cyan-600 hover:to-cyan-800 transition-all shadow-lg font-semibold"
+          className="app-btn-primary w-full sm:w-auto px-4 py-2"
         >
           ➕ Nuevo Producto
         </button>
@@ -172,7 +172,7 @@ const Productos = () => {
           value={busqueda}
           onChange={(e) => handleBusqueda(e.target.value)}
           placeholder="🔍 Buscar por Referencia o Descripción..."
-          className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+          className="app-input"
         />
         {busqueda && (
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
@@ -183,7 +183,7 @@ const Productos = () => {
       </div>
 
       {/* 🔹 Tabla de productos */}
-      <div className="overflow-x-auto">
+      <div className="app-desktop-table overflow-x-auto -mx-4 md:mx-0">
         <table className="min-w-full bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
           <thead>
             <tr className="bg-gray-200 dark:bg-gray-700 text-left">
@@ -270,16 +270,77 @@ const Productos = () => {
         </table>
       </div>
 
+      <div className="app-mobile-list">
+        {productosFiltrados.length === 0 ? (
+          <div className="app-mobile-card text-center text-gray-500 dark:text-gray-400 py-8">
+            <p className="text-4xl mb-2">🔍</p>
+            <p>No se encontraron productos</p>
+          </div>
+        ) : (
+          productosFiltrados.map((p) => (
+            <div key={p.IdProducto} className="app-mobile-card space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-gray-800 dark:text-gray-100">
+                    {p.Referencia}
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {p.Descripcion}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Talla: {p.Talla}
+                  </p>
+                </div>
+                <div className="text-right text-sm text-gray-500 dark:text-gray-400">
+                  <p>{p.NombreCategoria}</p>
+                  <p>{p.NombreProveedor}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Precio venta</p>
+                  <p className="font-semibold text-gray-800 dark:text-gray-100">
+                    ${p.PrecioVenta.toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Precio compra</p>
+                  <p className="font-semibold text-gray-800 dark:text-gray-100">
+                    ${p.PrecioCompra.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={() => handleEdit(p)}
+                  className="app-btn-primary w-full sm:flex-1 px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800"
+                >
+                  ✏️ Editar
+                </button>
+                <button
+                  onClick={() => handleDelete(p.IdProducto)}
+                  className="w-full sm:flex-1 bg-red-500 text-white px-3 py-2 rounded-xl hover:bg-red-600 transition shadow-lg font-semibold"
+                >
+                  🗑 Eliminar
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* 🔹 Modal para agregar producto */}
       {showModal && (
         <div
-          className="fixed inset-0 flex justify-center items-center z-50 animate-fadeIn"
+          className="fixed inset-0 flex justify-center items-center z-50 animate-fadeIn px-4"
           style={{
             backgroundColor: "rgba(0, 0, 0, 0.5)",
             backdropFilter: "blur(8px)",
           }}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-96 p-8 transform animate-slideIn">
+          <div className="app-modal-shell bg-white dark:bg-gray-800 transform animate-slideIn">
             <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100 text-center">
               ➕ Nuevo Producto
             </h2>
@@ -304,11 +365,11 @@ const Productos = () => {
                   placeholder={campo}
                   value={nuevoProducto[campo]}
                   onChange={handleChange}
-                  className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="app-input"
                   required={campo !== "Talla"}
                 />
               ))}
-              <div className="flex justify-between mt-6 gap-3">
+              <div className="flex flex-col sm:flex-row justify-between mt-6 gap-3">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
@@ -331,13 +392,13 @@ const Productos = () => {
       {/* 🔹 Modal para editar producto */}
       {showEditModal && productoEdit && (
         <div
-          className="fixed inset-0 flex justify-center items-center z-50 animate-fadeIn"
+          className="fixed inset-0 flex justify-center items-center z-50 animate-fadeIn px-4"
           style={{
             backgroundColor: "rgba(0, 0, 0, 0.5)",
             backdropFilter: "blur(8px)",
           }}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-96 p-8 transform animate-slideIn">
+          <div className="app-modal-shell bg-white dark:bg-gray-800 transform animate-slideIn">
             <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100 text-center">
               ✏️ Editar Producto
             </h2>
@@ -362,11 +423,11 @@ const Productos = () => {
                   placeholder={campo}
                   value={productoEdit[campo]}
                   onChange={handleEditChange}
-                  className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="app-input"
                   required={campo !== "Talla"}
                 />
               ))}
-              <div className="flex justify-between mt-6 gap-3">
+              <div className="flex flex-col sm:flex-row justify-between mt-6 gap-3">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}

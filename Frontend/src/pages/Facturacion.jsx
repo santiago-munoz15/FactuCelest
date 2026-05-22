@@ -194,9 +194,9 @@ export default function Facturacion() {
   };
 
   return (
-    <div className="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-3xl transition-colors duration-300">
+    <div className="app-page app-surface app-surface-inner space-y-6">
       <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
           🧾 Facturación
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
@@ -205,24 +205,24 @@ export default function Facturacion() {
       </div>
 
       {/* Buscar cliente */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
+      <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3 mb-6">
         <input
           type="text"
           placeholder="Cédula del cliente"
           value={cedula}
           onChange={(e) => setCedula(e.target.value)}
-          className="flex-1 min-w-[200px] border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+          className="app-input flex-1 min-w-0 md:min-w-[200px]"
         />
         <button
           onClick={handleBuscarCliente}
-          className="bg-gradient-to-r from-cyan-500 to-cyan-700 text-white px-6 py-3 rounded-xl hover:from-cyan-600 hover:to-cyan-800 transition-all shadow-lg font-semibold"
+          className="app-btn-primary w-full md:w-auto px-6 py-3"
         >
           🔍 Buscar
         </button>
         {!cliente && (
           <button
             onClick={() => setMostrarModalCliente(true)}
-            className="bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-green-800 transition-all shadow-lg font-semibold"
+            className="app-btn-secondary w-full md:w-auto px-6 py-3"
           >
             ➕ Registrar cliente
           </button>
@@ -232,7 +232,7 @@ export default function Facturacion() {
       {/* Info cliente */}
       {cliente && (
         <div className="mb-6 p-5 bg-gradient-to-r from-cyan-50 to-cyan-100 dark:from-gray-700 dark:to-gray-600 rounded-2xl border-l-4 border-cyan-500 shadow-md">
-          <div className="flex items-start gap-3">
+          <div className="flex flex-col sm:flex-row items-start gap-3">
             <div className="bg-cyan-500 text-white rounded-full p-3 text-2xl">
               👤
             </div>
@@ -253,12 +253,12 @@ export default function Facturacion() {
 
       {/* Agregar productos */}
       <div className="mb-6 relative">
-        <input
+          <input
           type="text"
           value={busqueda}
           onChange={(e) => handleBuscarProducto(e.target.value)}
           placeholder="🔍 Buscar producto por nombre..."
-          className="border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 w-full focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+          className="app-input"
         />
 
         {resultadosBusqueda.length > 0 && (
@@ -284,7 +284,7 @@ export default function Facturacion() {
       </div>
 
       {/* Tabla detalle */}
-      <div className="overflow-x-auto mb-6">
+      <div className="app-desktop-table overflow-x-auto mb-6">
         <table className="w-full text-sm rounded-2xl overflow-hidden">
           <thead className="bg-gradient-to-r from-cyan-500 to-cyan-700 text-white">
             <tr>
@@ -350,8 +350,69 @@ export default function Facturacion() {
         </table>
       </div>
 
+      <div className="app-mobile-list mb-6">
+        {detalle.length === 0 ? (
+          <div className="app-mobile-card text-center text-gray-500 dark:text-gray-400 py-8">
+            <p className="text-4xl mb-2">📦</p>
+            <p>No hay productos agregados</p>
+          </div>
+        ) : (
+          detalle.map((item) => (
+            <div
+              key={item.IdProducto}
+              className="app-mobile-card space-y-3"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-gray-800 dark:text-gray-100">
+                    {item.Descripcion}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Precio: ${item.PrecioVenta.toLocaleString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleEliminarProducto(item.IdProducto)}
+                  className="text-red-500 hover:text-red-700 font-bold text-xl transition"
+                >
+                  🗑️
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400 mb-1">
+                    Cantidad
+                  </p>
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.Cantidad}
+                    onChange={(e) =>
+                      handleCantidadChange(
+                        item.IdProducto,
+                        parseInt(e.target.value)
+                      )
+                    }
+                    className="app-input py-2 text-center"
+                  />
+                </div>
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400 mb-1">
+                    Total
+                  </p>
+                  <p className="font-semibold text-gray-800 dark:text-gray-100 py-2">
+                    ${item.Total.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Totales */}
-      <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-2xl p-6 mb-6">
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-2xl p-4 md:p-6 mb-6">
         <div className="space-y-3">
           {/* Método de pago */}
           <div className="mb-4 pb-4 border-b border-gray-300 dark:border-gray-500">
@@ -361,7 +422,7 @@ export default function Facturacion() {
             <select
               value={metodoPago}
               onChange={(e) => setMetodoPago(e.target.value)}
-              className="w-full border-2 border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="app-input py-2"
             >
               <option value="Efectivo">Efectivo</option>
               <option value="Tarjeta">Tarjeta</option>
@@ -373,7 +434,7 @@ export default function Facturacion() {
 
           {/* Subtotal, IVA, Total */}
           <div className="text-right">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-4">
               <span className="text-gray-600 dark:text-gray-300">
                 Subtotal:
               </span>
@@ -381,7 +442,7 @@ export default function Facturacion() {
                 ${totales.subtotal.toFixed(2)}
               </span>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-4">
               <span className="text-gray-600 dark:text-gray-300">
                 IVA (19%):
               </span>
@@ -390,7 +451,7 @@ export default function Facturacion() {
               </span>
             </div>
             <div className="border-t-2 border-gray-300 dark:border-gray-500 pt-2 mt-2">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center gap-4">
                 <span className="text-gray-800 dark:text-gray-100 font-bold text-xl">
                   Total:
                 </span>
@@ -405,7 +466,7 @@ export default function Facturacion() {
 
       <button
         onClick={handleGenerarFactura}
-        className="w-full bg-gradient-to-r from-cyan-500 to-cyan-700 text-white px-6 py-4 rounded-xl hover:from-cyan-600 hover:to-cyan-800 transition-all shadow-lg font-bold text-lg"
+        className="app-btn-primary w-full px-6 py-4 font-bold text-base md:text-lg"
       >
         ✨ Generar Factura
       </button>

@@ -3,20 +3,35 @@ import { useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import "../App.css";
 
-function Sidebar() {
+function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   const { isDarkMode, toggleTheme } = useTheme();
   const [showConfig, setShowConfig] = useState(false);
 
   return (
-    <aside className="w-56 bg-white dark:bg-gray-900 p-4 shadow-lg flex flex-col justify-between transition-colors duration-300">
+    <aside
+      className={`fixed inset-y-0 left-0 z-40 w-72 bg-white dark:bg-gray-900 p-4 shadow-lg flex flex-col justify-between overflow-y-auto transition-transform duration-300 md:static md:z-auto md:w-56 md:translate-x-0 ${
+        mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      }`}
+    >
       <div>
-        <h2 className="text-xl font-bold text-cyan-600 dark:text-cyan-400 mb-4">
-          FactuCelest
-        </h2>
+        <div className="flex items-center justify-between mb-4 md:block">
+          <h2 className="text-xl font-bold text-cyan-600 dark:text-cyan-400">
+            FactuCelest
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="md:hidden rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1 text-gray-600 dark:text-gray-300"
+            aria-label="Cerrar menú lateral"
+          >
+            ✕
+          </button>
+        </div>
         <ul className="space-y-2 text-gray-700 dark:text-gray-300">
           <li>
             <Link
               to="/menu"
+              onClick={onClose}
               className="block hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
             >
               📊 MenuPrincipal
@@ -25,6 +40,7 @@ function Sidebar() {
           <li>
             <Link
               to="/facturacion"
+              onClick={onClose}
               className="block hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
             >
               🧾 Facturacion
@@ -33,6 +49,7 @@ function Sidebar() {
           <li>
             <Link
               to="/clientes"
+              onClick={onClose}
               className="block hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
             >
               👥 Clientes
@@ -41,6 +58,7 @@ function Sidebar() {
           <li>
             <Link
               to="/pagos"
+              onClick={onClose}
               className="block hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
             >
               💰 Pagos
@@ -49,6 +67,7 @@ function Sidebar() {
           <li>
             <Link
               to="/productos"
+              onClick={onClose}
               className="block hover:text-cyan-600 dark:hover:text-cyan-400 font-semibold transition-colors"
             >
               📦 Productos
@@ -57,6 +76,7 @@ function Sidebar() {
           <li>
             <Link
               to="/reportes"
+              onClick={onClose}
               className="block hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
             >
               📈 Reportes

@@ -56,13 +56,13 @@ export default function ModalCliente({ onClose, onClienteCreado }) {
 
   return (
     <div
-      className="fixed inset-0 flex justify-center items-center z-50 animate-fadeIn"
+      className="fixed inset-0 flex justify-center items-center z-50 animate-fadeIn px-4"
       style={{
         backgroundColor: "rgba(0, 0, 0, 0.5)",
         backdropFilter: "blur(8px)",
       }}
     >
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl w-full max-w-md shadow-2xl transform animate-slideIn">
+      <div className="bg-white dark:bg-gray-800 p-5 md:p-8 rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl transform animate-slideIn">
         <h3 className="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-gray-100">
           🧍 Registrar Cliente
         </h3>

@@ -74,7 +74,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-cyan-900 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-cyan-900 flex flex-col items-center justify-center p-4 relative">
       {/* Card principal del login */}
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform hover:scale-[1.02] transition-transform duration-300">
         {/* Header con gradiente celeste */}
@@ -153,13 +153,13 @@ export default function Login() {
       {/* 🌟 MODAL REGISTRO con opacidad mejorada */}
       {showModal && (
         <div
-          className="fixed inset-0 flex justify-center items-center z-50 animate-fadeIn"
+          className="fixed inset-0 flex justify-center items-center z-50 animate-fadeIn px-4"
           style={{
             backgroundColor: "rgba(0, 0, 0, 0.5)",
             backdropFilter: "blur(8px)",
           }}
         >
-          <div className="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl transform animate-slideIn">
+          <div className="bg-white p-5 md:p-8 rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl transform animate-slideIn">
             <h3 className="text-2xl font-bold mb-6 text-center text-gray-800">
               {verificando ? "✉️ Verifica tu correo" : "🚀 Crear cuenta"}
             </h3>
@@ -229,7 +229,7 @@ export default function Login() {
         </div>
       )}
 
-      <div className="absolute bottom-0 w-full">
+      <div className="mt-8 w-full">
         <Footer />
       </div>
     </div>
