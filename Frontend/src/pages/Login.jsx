@@ -48,14 +48,13 @@ export default function Login() {
   // 🔹 REGISTRO
   const handleRegistrar = async () => {
     try {
-      await axios.post(buildApiUrl("/api/usuarios/registrar"), registro);
+      const res = await axios.post(buildApiUrl("/api/usuarios/registrar"), registro);
       setVerificando(true);
-      showInfoAlert(
-        "Código enviado",
-        "Se envió un código de verificación a tu correo"
-      );
-    } catch {
-      showErrorAlert("Error", "No se pudo registrar el usuario");
+      showInfoAlert("Registro", res.data?.message || "Usuario registrado");
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "No se pudo registrar el usuario";
+      showErrorAlert("Error", message);
     }
   };
 

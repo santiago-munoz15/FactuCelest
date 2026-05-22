@@ -84,6 +84,11 @@ export const Registrar = async (req, res) => {
           <p>Por favor ingrésalo en la aplicación para completar tu registro.</p>
         `,
       });
+
+      return res.status(201).json({
+        message:
+          "✅ Usuario registrado. Se envió un código de verificación al correo.",
+      });
     } catch (correoError) {
       console.error("⚠️ No se pudo enviar el correo de verificación:", correoError);
       return res.status(201).json({
@@ -91,11 +96,6 @@ export const Registrar = async (req, res) => {
           "✅ Usuario registrado correctamente, pero no se pudo enviar el correo de verificación. Revisa la configuración SMTP.",
       });
     }
-
-    res.status(201).json({
-      message:
-        "✅ Usuario registrado. Se envió un código de verificación al correo.",
-    });
   } catch (error) {
     console.error("❌ Error al registrar usuario:", error);
     res.status(500).json({ message: "Error al registrar usuario." });

@@ -5,8 +5,8 @@ export const loginUsuario = async (correo, contrasena) => {
   const pool = await getConnection();
   const result = await pool
     .request()
-    .input("Correo", sql.VarChar, correo)
-    .input("Contrasena", sql.VarChar, contrasena)
+    .input("Email", sql.VarChar, correo)
+    .input("Password", sql.VarChar, contrasena)
     .execute("spLoginUsuario");
 
   return result.recordset;
@@ -23,9 +23,9 @@ export const registrarUsuario = async (
   const result = await pool
     .request()
     .input("Nombre", sql.VarChar, nombre)
-    .input("Correo", sql.VarChar, correo)
-    .input("Contrasena", sql.VarChar, contrasena)
-    .input("CodigoVerificacion", sql.VarChar, codigoVerificacion)
+    .input("Email", sql.VarChar, correo)
+    .input("Password", sql.VarChar, contrasena)
+    .input("Codigo", sql.VarChar, codigoVerificacion)
     .execute("spRegistrarUsuario");
 
   return result.recordset;
@@ -36,9 +36,9 @@ export const verificarCodigo = async (correo, codigo) => {
   const pool = await getConnection();
   const result = await pool
     .request()
-    .input("Correo", sql.VarChar, correo)
+    .input("Email", sql.VarChar, correo)
     .input("Codigo", sql.VarChar, codigo)
-    .execute("spVerificarCodigo");
+    .execute("spConfirmarCodigo");
 
   return result.recordset;
 };
