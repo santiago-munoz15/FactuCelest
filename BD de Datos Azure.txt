@@ -1,0 +1,7 @@
+BD de Datos Azure
+
+Nombre del servidor: adminsantiago
+Usuario: Factuceleste
+Contraseña: Admin123*
+
+clave de app: cbuw keam hbdk czhb

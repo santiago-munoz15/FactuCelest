@@ -63,7 +63,7 @@ export default function Login() {
   const handleVerificar = async () => {
     try {
       const res = await axios.post(buildApiUrl("/api/usuarios/verificar"), {
-        correo: registro.correo,
+        correo: registro.email,
         codigo: registro.codigo,
       });
       await showSuccessAlert("¡Verificado!", res.data.message);

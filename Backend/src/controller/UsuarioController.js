@@ -1,6 +1,20 @@
 import { getConnection, sql } from "../config/db.js";
 import nodemailer from "nodemailer";
 
+const crearTransportadorCorreo = () =>
+  nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    port: Number(process.env.EMAIL_PORT || 587),
+    secure: String(process.env.EMAIL_SECURE || "false") === "true",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+  });
+
 // ✅ LOGIN
 export const Login = async (req, res) => {
   try {
@@ -56,28 +70,27 @@ export const Registrar = async (req, res) => {
       .input("Codigo", sql.VarChar(10), codigoVerificacion) // ✅ importante
       .execute("spRegistrarUsuario");
 
-    // Configurar transporte de correo (usa tu propio correo aquí)
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER, // tu correo
-        pass: process.env.EMAIL_PASS, // tu contraseña o App Password
-      },
-    });
+    try {
+      const transporter = crearTransportadorCorreo();
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Código de verificación - FactuCelest",
-      html: `
-        <h2>Hola ${nombre},</h2>
-        <p>Tu código de verificación es:</p>
-        <h3 style="color:blue;">${codigoVerificacion}</h3>
-        <p>Por favor ingrésalo en la aplicación para completar tu registro.</p>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Código de verificación - FactuCelest",
+        html: `
+          <h2>Hola ${nombre},</h2>
+          <p>Tu código de verificación es:</p>
+          <h3 style="color:blue;">${codigoVerificacion}</h3>
+          <p>Por favor ingrésalo en la aplicación para completar tu registro.</p>
+        `,
+      });
+    } catch (correoError) {
+      console.error("⚠️ No se pudo enviar el correo de verificación:", correoError);
+      return res.status(201).json({
+        message:
+          "✅ Usuario registrado correctamente, pero no se pudo enviar el correo de verificación. Revisa la configuración SMTP.",
+      });
+    }
 
     res.status(201).json({
       message:
