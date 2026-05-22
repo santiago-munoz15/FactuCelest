@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { showConfirmAlert } from "../utils/sweetAlertHelper";
+import { showConfirmAlert, showSuccessAlert } from "../utils/sweetAlertHelper";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
 
@@ -15,10 +15,17 @@ const MainLayout = ({ children }) => {
     );
 
     if (result.isConfirmed) {
-      //limpiar datos de sesión
+      // Limpiar datos de sesión
       localStorage.removeItem("usuario");
       localStorage.removeItem("token");
-      navigate("/"); //Redirige al login
+      setMenuOpen(false);
+
+      await showSuccessAlert(
+        "Sesión cerrada",
+        "Has cerrado sesión correctamente."
+      );
+
+      navigate("/"); // Redirige al login
     }
   };
 
