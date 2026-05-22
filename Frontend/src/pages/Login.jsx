@@ -6,6 +6,7 @@ import {
   showErrorAlert,
   showInfoAlert,
 } from "../utils/sweetAlertHelper";
+import { buildApiUrl } from "../config/api";
 import Footer from "../components/Footer";
 import Logo from "../assets/login.png";
 
@@ -30,7 +31,7 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:3000/api/usuarios/login", {
+      const res = await axios.post(buildApiUrl("/api/usuarios/login"), {
         correo: email,
         contrasena: password,
       });
@@ -47,10 +48,7 @@ export default function Login() {
   // 🔹 REGISTRO
   const handleRegistrar = async () => {
     try {
-      await axios.post(
-        "http://localhost:3000/api/usuarios/registrar",
-        registro
-      );
+      await axios.post(buildApiUrl("/api/usuarios/registrar"), registro);
       setVerificando(true);
       showInfoAlert(
         "Código enviado",
@@ -64,13 +62,10 @@ export default function Login() {
   // 🔹 VERIFICAR CÓDIGO
   const handleVerificar = async () => {
     try {
-      const res = await axios.post(
-        "http://localhost:3000/api/usuarios/verificar",
-        {
-          correo: registro.correo,
-          codigo: registro.codigo,
-        }
-      );
+      const res = await axios.post(buildApiUrl("/api/usuarios/verificar"), {
+        correo: registro.correo,
+        codigo: registro.codigo,
+      });
       await showSuccessAlert("¡Verificado!", res.data.message);
       setShowModal(false);
       setVerificando(false);

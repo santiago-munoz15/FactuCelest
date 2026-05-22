@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { showSuccessAlert, showErrorAlert } from "../utils/sweetAlertHelper";
+import { buildApiUrl } from "../config/api";
 
 export default function ModalCliente({ onClose, onClienteCreado }) {
   const [cliente, setCliente] = useState({
@@ -33,10 +34,7 @@ export default function ModalCliente({ onClose, onClienteCreado }) {
 
     try {
       // Llamada al backend
-      const res = await axios.post(
-        "http://localhost:3000/api/clientes/crear",
-        cliente
-      );
+      const res = await axios.post(buildApiUrl("/api/clientes/crear"), cliente);
 
       if (res.status === 200 || res.status === 201) {
         await showSuccessAlert("¡Éxito!", "Cliente registrado correctamente");

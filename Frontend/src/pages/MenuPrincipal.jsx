@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "../App.css";
+import { buildApiUrl } from "../config/api";
 
 function MenuPrincipal() {
   const [facturas, setFacturas] = useState([]);
@@ -16,9 +17,7 @@ function MenuPrincipal() {
 
   const fetchUltimasFacturas = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:3000/api/facturas/ultimas?cantidad=6"
-      );
+      const res = await axios.get(buildApiUrl("/api/facturas/ultimas?cantidad=6"));
       if (res.data.success) {
         setFacturas(res.data.facturas);
       }
@@ -31,9 +30,7 @@ function MenuPrincipal() {
 
   const fetchVentasMensuales = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:3000/api/facturas/ventas-mensuales"
-      );
+      const res = await axios.get(buildApiUrl("/api/facturas/ventas-mensuales"));
       if (res.data.success) {
         setVentasMensuales(res.data.ventas);
       }

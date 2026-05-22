@@ -6,6 +6,7 @@ import {
   showInfoAlert,
 } from "../utils/sweetAlertHelper";
 import ModalCliente from "../components/ModalCliente";
+import { buildApiUrl } from "../config/api";
 
 export default function Facturacion() {
   const [cedula, setCedula] = useState("");
@@ -26,7 +27,7 @@ export default function Facturacion() {
   // 🔹 Cargar productos al iniciar
   useEffect(() => {
     axios
-      .get("http://localhost:3000/api/productos/listarp")
+      .get(buildApiUrl("/api/productos/listarp"))
       .then((res) => setProductos(res.data))
       .catch((err) => console.error("Error cargando productos:", err));
   }, []);
@@ -52,9 +53,7 @@ export default function Facturacion() {
     }
 
     try {
-      const res = await axios.get(
-        `http://localhost:3000/api/clientes/buscar/${cedula}`
-      );
+      const res = await axios.get(buildApiUrl(`/api/clientes/buscar/${cedula}`));
 
       if (res.data.success) {
         setCliente(res.data.data);
@@ -140,10 +139,7 @@ export default function Facturacion() {
 
       console.log("📤 Enviando factura:", facturaData);
 
-      const res = await axios.post(
-        "http://localhost:3000/api/facturas/crear",
-        facturaData
-      );
+      const res = await axios.post(buildApiUrl("/api/facturas/crear"), facturaData);
 
       console.log("📥 Respuesta del servidor:", res.data);
 

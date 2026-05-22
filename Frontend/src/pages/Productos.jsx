@@ -5,6 +5,7 @@ import {
   showErrorAlert,
   showConfirmAlert,
 } from "../utils/sweetAlertHelper";
+import { buildApiUrl } from "../config/api";
 
 const Productos = () => {
   const [productos, setProductos] = useState([]);
@@ -35,9 +36,7 @@ const Productos = () => {
 
   const fetchProductos = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:3000/api/productos/listarp"
-      );
+      const res = await axios.get(buildApiUrl("/api/productos/listarp"));
       setProductos(res.data);
       setProductosFiltrados(res.data);
       setLoading(false);
@@ -54,9 +53,7 @@ const Productos = () => {
 
     try {
       const res = await axios.get(
-        `http://localhost:3000/api/productos/buscar?busqueda=${encodeURIComponent(
-          texto
-        )}`
+        buildApiUrl(`/api/productos/buscar?busqueda=${encodeURIComponent(texto)}`)
       );
       setProductosFiltrados(res.data);
     } catch (error) {
@@ -75,10 +72,7 @@ const Productos = () => {
   const handleGuardar = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(
-        "http://localhost:3000/api/productos/insertarp",
-        nuevoProducto
-      );
+      await axios.post(buildApiUrl("/api/productos/insertarp"), nuevoProducto);
       await showSuccessAlert("¡Éxito!", "Producto agregado correctamente");
       setShowModal(false);
       setNuevoProducto({
@@ -115,7 +109,7 @@ const Productos = () => {
     try {
       console.log("ID del producto:", productoEdit.IdProducto);
       await axios.put(
-        `http://localhost:3000/api/productos/actualizarp/${productoEdit.IdProducto}`,
+        buildApiUrl(`/api/productos/actualizarp/${productoEdit.IdProducto}`),
         productoEdit
       );
       await showSuccessAlert(
@@ -140,7 +134,7 @@ const Productos = () => {
     if (!result.isConfirmed) return;
 
     try {
-      await axios.delete(`http://localhost:3000/api/productos/eliminarp/${id}`);
+      await axios.delete(buildApiUrl(`/api/productos/eliminarp/${id}`));
       setProductos((prev) => prev.filter((p) => p.IdProducto !== id));
       showSuccessAlert("¡Eliminado!", "Producto eliminado correctamente");
     } catch (error) {
