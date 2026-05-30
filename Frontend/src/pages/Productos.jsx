@@ -340,48 +340,159 @@ const Productos = () => {
             backdropFilter: "blur(8px)",
           }}
         >
-          <div className="app-modal-shell bg-white dark:bg-gray-800 transform animate-slideIn">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100 text-center">
-              ➕ Nuevo Producto
-            </h2>
-            <form onSubmit={handleGuardar} className="space-y-4">
-              {[
-                "Referencia",
-                "Descripcion",
-                "Talla",
-                "PrecioVenta",
-                "PrecioCompra",
-                "IdCategoriaFK",
-                "TaxIdFK",
-              ].map((campo) => (
-                <input
-                  key={campo}
-                  type={
-                    campo.includes("Precio") || campo.includes("Id")
-                      ? "number"
-                      : "text"
-                  }
-                  name={campo}
-                  placeholder={campo}
-                  value={nuevoProducto[campo]}
-                  onChange={handleChange}
-                  className="app-input"
-                  required={campo !== "Talla"}
-                />
-              ))}
-              <div className="flex flex-col sm:flex-row justify-between mt-6 gap-3">
+          <div className="app-modal-shell max-w-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 text-white transform animate-slideIn border border-white/10">
+            <div className="mb-6 rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.35em] text-cyan-200 mb-2">
+                    Catálogo de productos
+                  </p>
+                  <h2 className="text-3xl font-black leading-tight">
+                    ➕ Nuevo Producto
+                  </h2>
+                  <p className="mt-2 text-sm text-cyan-50/80 max-w-2xl">
+                    Registra un producto con referencia, precios y clasificación para
+                    mantener el inventario limpio y fácil de facturar.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-center text-sm min-w-[220px]">
+                  <div className="rounded-2xl bg-black/20 p-3 border border-white/10">
+                    <p className="text-cyan-200">Campos</p>
+                    <p className="text-xl font-bold">7</p>
+                  </div>
+                  <div className="rounded-2xl bg-black/20 p-3 border border-white/10">
+                    <p className="text-cyan-200">Estado</p>
+                    <p className="text-xl font-bold">Nuevo</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleGuardar} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Referencia
+                  </label>
+                  <input
+                    type="text"
+                    name="Referencia"
+                    placeholder="Ej: REF-1001"
+                    value={nuevoProducto.Referencia}
+                    onChange={handleChange}
+                    className="app-input"
+                    required
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Descripción
+                  </label>
+                  <input
+                    type="text"
+                    name="Descripcion"
+                    placeholder="Ej: Boxer microfibra plus"
+                    value={nuevoProducto.Descripcion}
+                    onChange={handleChange}
+                    className="app-input"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Talla
+                  </label>
+                  <input
+                    type="text"
+                    name="Talla"
+                    placeholder="Ej: 2XL"
+                    value={nuevoProducto.Talla}
+                    onChange={handleChange}
+                    className="app-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Precio de venta
+                  </label>
+                  <input
+                    type="number"
+                    name="PrecioVenta"
+                    placeholder="0"
+                    value={nuevoProducto.PrecioVenta}
+                    onChange={handleChange}
+                    className="app-input"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Precio de compra
+                  </label>
+                  <input
+                    type="number"
+                    name="PrecioCompra"
+                    placeholder="0"
+                    value={nuevoProducto.PrecioCompra}
+                    onChange={handleChange}
+                    className="app-input"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Categoría
+                  </label>
+                  <input
+                    type="number"
+                    name="IdCategoriaFK"
+                    placeholder="ID categoría"
+                    value={nuevoProducto.IdCategoriaFK}
+                    onChange={handleChange}
+                    className="app-input"
+                    required
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Proveedor
+                  </label>
+                  <input
+                    type="number"
+                    name="TaxIdFK"
+                    placeholder="Tax ID proveedor"
+                    value={nuevoProducto.TaxIdFK}
+                    onChange={handleChange}
+                    className="app-input"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-cyan-400/20 bg-cyan-950/30 p-4 text-sm text-cyan-50/90">
+                Completa los datos mínimos para que el producto aparezca en búsquedas,
+                facturación y reportes.
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-between gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-400 dark:bg-gray-600 text-white px-4 py-3 rounded-xl hover:bg-gray-500 dark:hover:bg-gray-700 transition font-semibold"
+                  className="flex-1 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 font-semibold text-white transition hover:bg-white/15"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-cyan-500 to-cyan-700 text-white px-4 py-3 rounded-xl hover:from-cyan-600 hover:to-cyan-800 transition shadow-lg font-semibold"
+                  className="flex-1 rounded-2xl bg-gradient-to-r from-cyan-400 to-emerald-500 px-4 py-3 font-semibold text-slate-950 shadow-lg transition hover:from-cyan-300 hover:to-emerald-400"
                 >
-                  Guardar
+                  Guardar producto
                 </button>
               </div>
             </form>
@@ -398,48 +509,159 @@ const Productos = () => {
             backdropFilter: "blur(8px)",
           }}
         >
-          <div className="app-modal-shell bg-white dark:bg-gray-800 transform animate-slideIn">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100 text-center">
-              ✏️ Editar Producto
-            </h2>
-            <form onSubmit={handleActualizar} className="space-y-4">
-              {[
-                "Referencia",
-                "Descripcion",
-                "Talla",
-                "PrecioVenta",
-                "PrecioCompra",
-                "IdCategoriaFK",
-                "TaxIdFK",
-              ].map((campo) => (
-                <input
-                  key={campo}
-                  type={
-                    campo.includes("Precio") || campo.includes("Id")
-                      ? "number"
-                      : "text"
-                  }
-                  name={campo}
-                  placeholder={campo}
-                  value={productoEdit[campo]}
-                  onChange={handleEditChange}
-                  className="app-input"
-                  required={campo !== "Talla"}
-                />
-              ))}
-              <div className="flex flex-col sm:flex-row justify-between mt-6 gap-3">
+          <div className="app-modal-shell max-w-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 text-white transform animate-slideIn border border-white/10">
+            <div className="mb-6 rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.35em] text-cyan-200 mb-2">
+                    Catálogo de productos
+                  </p>
+                  <h2 className="text-3xl font-black leading-tight">
+                    ✏️ Editar Producto
+                  </h2>
+                  <p className="mt-2 text-sm text-cyan-50/80 max-w-2xl">
+                    Ajusta los datos del producto sin perder la estructura del inventario
+                    ni afectar el flujo de facturación.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-center text-sm min-w-[220px]">
+                  <div className="rounded-2xl bg-black/20 p-3 border border-white/10">
+                    <p className="text-cyan-200">ID</p>
+                    <p className="text-xl font-bold">{productoEdit.IdProducto}</p>
+                  </div>
+                  <div className="rounded-2xl bg-black/20 p-3 border border-white/10">
+                    <p className="text-cyan-200">Estado</p>
+                    <p className="text-xl font-bold">Editar</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleActualizar} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Referencia
+                  </label>
+                  <input
+                    type="text"
+                    name="Referencia"
+                    placeholder="Ej: REF-1001"
+                    value={productoEdit.Referencia}
+                    onChange={handleEditChange}
+                    className="app-input"
+                    required
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Descripción
+                  </label>
+                  <input
+                    type="text"
+                    name="Descripcion"
+                    placeholder="Ej: Boxer microfibra plus"
+                    value={productoEdit.Descripcion}
+                    onChange={handleEditChange}
+                    className="app-input"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Talla
+                  </label>
+                  <input
+                    type="text"
+                    name="Talla"
+                    placeholder="Ej: 2XL"
+                    value={productoEdit.Talla}
+                    onChange={handleEditChange}
+                    className="app-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Precio de venta
+                  </label>
+                  <input
+                    type="number"
+                    name="PrecioVenta"
+                    placeholder="0"
+                    value={productoEdit.PrecioVenta}
+                    onChange={handleEditChange}
+                    className="app-input"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Precio de compra
+                  </label>
+                  <input
+                    type="number"
+                    name="PrecioCompra"
+                    placeholder="0"
+                    value={productoEdit.PrecioCompra}
+                    onChange={handleEditChange}
+                    className="app-input"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Categoría
+                  </label>
+                  <input
+                    type="number"
+                    name="IdCategoriaFK"
+                    placeholder="ID categoría"
+                    value={productoEdit.IdCategoriaFK}
+                    onChange={handleEditChange}
+                    className="app-input"
+                    required
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-semibold text-cyan-50/90">
+                    Proveedor
+                  </label>
+                  <input
+                    type="number"
+                    name="TaxIdFK"
+                    placeholder="Tax ID proveedor"
+                    value={productoEdit.TaxIdFK}
+                    onChange={handleEditChange}
+                    className="app-input"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-cyan-400/20 bg-cyan-950/30 p-4 text-sm text-cyan-50/90">
+                Revisa bien los cambios antes de guardar. Esta edición actualiza el
+                producto en todo el sistema.
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-between gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="flex-1 bg-gray-400 dark:bg-gray-600 text-white px-4 py-3 rounded-xl hover:bg-gray-500 dark:hover:bg-gray-700 transition font-semibold"
+                  className="flex-1 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 font-semibold text-white transition hover:bg-white/15"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-700 text-white px-4 py-3 rounded-xl hover:from-blue-600 hover:to-blue-800 transition shadow-lg font-semibold"
+                  className="flex-1 rounded-2xl bg-gradient-to-r from-blue-400 to-cyan-500 px-4 py-3 font-semibold text-slate-950 shadow-lg transition hover:from-blue-300 hover:to-cyan-400"
                 >
-                  Actualizar
+                  Actualizar producto
                 </button>
               </div>
             </form>
