@@ -3,29 +3,21 @@ import { useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import "../App.css";
 
-function Sidebar({ mobileOpen = false, onClose = () => {} }) {
+function Sidebar({ isOpen = true, onClose = () => {} }) {
   const { isDarkMode, toggleTheme } = useTheme();
   const [showConfig, setShowConfig] = useState(false);
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 w-72 bg-white dark:bg-gray-900 p-4 shadow-lg flex flex-col justify-between overflow-y-auto transition-transform duration-300 md:static md:z-auto md:w-56 md:translate-x-0 ${
-        mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      className={`fixed inset-y-0 left-0 z-40 w-72 bg-white dark:bg-gray-900 p-4 shadow-lg flex flex-col justify-between overflow-y-auto transition-transform duration-300 ${
+        isOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
       <div>
-        <div className="flex items-center justify-between mb-4 md:block">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-cyan-600 dark:text-cyan-400">
             FactuCelest
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="md:hidden rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1 text-gray-600 dark:text-gray-300"
-            aria-label="Cerrar menú lateral"
-          >
-            ✕
-          </button>
         </div>
         <ul className="space-y-2 text-gray-700 dark:text-gray-300">
           <li>
@@ -113,6 +105,14 @@ function Sidebar({ mobileOpen = false, onClose = () => {} }) {
           </div>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-4 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      >
+        Ocultar menú
+      </button>
     </aside>
   );
 }

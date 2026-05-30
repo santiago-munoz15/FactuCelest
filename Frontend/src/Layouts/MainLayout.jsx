@@ -7,6 +7,7 @@ import Footer from "../components/Footer";
 const MainLayout = ({ children }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -31,7 +32,7 @@ const MainLayout = ({ children }) => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-800 transition-colors duration-300 pb-12">
       {mobileMenuOpen && (
         <button
           type="button"
@@ -43,22 +44,40 @@ const MainLayout = ({ children }) => {
 
       {/* Menú lateral */}
       <Sidebar
-        mobileOpen={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
+        isOpen={sidebarOpen || mobileMenuOpen}
+        onClose={() => {
+          setSidebarOpen(false);
+          setMobileMenuOpen(false);
+        }}
       />
 
       {/* Contenido principal */}
-      <div className="flex-1 flex flex-col min-w-0 w-full md:pl-0">
+      <div className={`flex flex-col min-w-0 w-full transition-all duration-300 ${sidebarOpen ? "md:pl-72" : "md:pl-0"}`}>
         {/* Barra superior */}
         <header className="bg-white dark:bg-gray-900 shadow px-4 py-3 flex flex-col gap-3 md:flex-row md:justify-between md:items-center relative transition-colors duration-300">
           <div className="flex items-center gap-3 w-full md:w-auto">
             <button
               type="button"
-              onClick={() => setMobileMenuOpen(true)}
+              onClick={() => {
+                if (window.innerWidth < 768) {
+                  setMobileMenuOpen(true);
+                } else {
+                  setSidebarOpen((value) => !value);
+                }
+              }}
               className="md:hidden inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-700 dark:text-gray-200"
               aria-label="Abrir menú lateral"
             >
               ☰
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSidebarOpen((value) => !value)}
+              className="hidden md:inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Mostrar u ocultar menú lateral"
+            >
+              {sidebarOpen ? "✕ Menú" : "☰ Menú"}
             </button>
 
             {/* Buscador */}
@@ -107,7 +126,9 @@ const MainLayout = ({ children }) => {
         </main>
 
         {/* Footer global */}
-        <Footer />
+        <div className="fixed bottom-0 left-0 right-0 z-20 md:left-auto md:right-0 md:pl-72">
+          <Footer />
+        </div>
       </div>
     </div>
   );
