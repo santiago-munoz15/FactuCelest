@@ -10,6 +10,7 @@ export default function ModalCliente({ onClose, onClienteCreado }) {
     Telefono: "",
     Correo: "",
     Direccion: "",
+    Ciudad: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -22,10 +23,10 @@ export default function ModalCliente({ onClose, onClienteCreado }) {
 
   // Guardar cliente en la base de datos
   const handleGuardar = async () => {
-    const { Documento, Nombre, Telefono, Correo, Direccion } = cliente;
+    const { Documento, Nombre, Telefono, Correo, Direccion, Ciudad } = cliente;
 
     // Validar campos vacíos
-    if (!Documento || !Nombre || !Telefono || !Correo || !Direccion) {
+    if (!Documento || !Nombre || !Telefono || !Correo || !Direccion || !Ciudad) {
       showErrorAlert("Campos incompletos", "Todos los campos son obligatorios");
       return;
     }
@@ -108,6 +109,14 @@ export default function ModalCliente({ onClose, onClienteCreado }) {
             onChange={handleChange}
             className="border-2 border-gray-200 dark:border-gray-600 p-3 w-full rounded-xl focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           />
+
+            <input
+              name="Ciudad"
+              placeholder="Ciudad"
+              value={cliente.Ciudad}
+              onChange={handleChange}
+              className="border-2 border-gray-200 dark:border-gray-600 p-3 w-full rounded-xl focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            />
         </div>
 
         <button

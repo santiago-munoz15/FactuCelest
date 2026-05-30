@@ -429,10 +429,19 @@ export default function Facturacion() {
                 {cliente.Nombre}
               </p>
               <p className="text-gray-600 dark:text-gray-300 text-sm">
-                📧 {cliente.Correo}
+                🪪 {cliente.Documento}
+              </p>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">
+                🏙️ {cliente.Ciudad || "No registrada"}
+              </p>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">
+                📍 {cliente.Direccion || "No registrada"}
               </p>
               <p className="text-gray-600 dark:text-gray-300 text-sm">
                 📱 {cliente.Telefono || "No registrado"}
+              </p>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">
+                📧 {cliente.Correo || "No registrado"}
               </p>
             </div>
           </div>

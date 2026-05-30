@@ -17,6 +17,11 @@ let schemaReadyPromise = null;
 
 const ensureSchema = async (pool) => {
   await pool.request().query(`
+    IF COL_LENGTH('dbo.Clientes', 'Ciudad') IS NULL
+    BEGIN
+      ALTER TABLE dbo.Clientes ADD Ciudad VARCHAR(100) NULL;
+    END;
+
     IF OBJECT_ID('dbo.Vendedores', 'U') IS NULL
     BEGIN
       CREATE TABLE dbo.Vendedores (

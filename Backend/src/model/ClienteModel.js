@@ -5,7 +5,9 @@ const ClienteModel = {
   listar: async () => {
     try {
       const pool = await getConnection();
-      const result = await pool.request().query("SELECT * FROM Clientes");
+      const result = await pool
+        .request()
+        .query("SELECT Documento, Nombre, Telefono, Correo, Direccion, Ciudad FROM Clientes");
       return result.recordset;
     } catch (error) {
       console.error("❌ Error al listar clientes:", error);
@@ -20,7 +22,17 @@ const ClienteModel = {
       const result = await pool
         .request()
         .input("Documento", sql.BigInt, documento)
-        .execute("spBuscarClientePorDocumento");
+        .query(`
+          SELECT
+            Documento,
+            Nombre,
+            Telefono,
+            Correo,
+            Direccion,
+            Ciudad
+          FROM Clientes
+          WHERE Documento = @Documento
+        `);
 
       return result.recordset[0]; // devuelve solo 1 cliente con IdCliente, Nombre, etc.
     } catch (error) {
@@ -33,7 +45,7 @@ const ClienteModel = {
   crear: async (data) => {
     try {
       const pool = await getConnection();
-      const { Documento, Nombre, Telefono, Correo, Direccion } = data;
+      const { Documento, Nombre, Telefono, Correo, Direccion, Ciudad } = data;
 
       const result = await pool
         .request()
@@ -42,7 +54,32 @@ const ClienteModel = {
         .input("Telefono", sql.BigInt, Telefono)
         .input("Correo", sql.VarChar, Correo)
         .input("Direccion", sql.VarChar, Direccion)
-        .execute("spCrearCliente");
+        .input("Ciudad", sql.VarChar, Ciudad)
+        .query(`
+          IF EXISTS (SELECT 1 FROM Clientes WHERE Documento = @Documento)
+          BEGIN
+            UPDATE Clientes
+            SET Nombre = @Nombre,
+                Telefono = @Telefono,
+                Correo = @Correo,
+                Direccion = @Direccion,
+                Ciudad = @Ciudad
+            WHERE Documento = @Documento;
+
+            SELECT Documento, Nombre, Telefono, Correo, Direccion, Ciudad
+            FROM Clientes
+            WHERE Documento = @Documento;
+          END
+          ELSE
+          BEGIN
+            INSERT INTO Clientes (Documento, Nombre, Telefono, Correo, Direccion, Ciudad)
+            VALUES (@Documento, @Nombre, @Telefono, @Correo, @Direccion, @Ciudad);
+
+            SELECT Documento, Nombre, Telefono, Correo, Direccion, Ciudad
+            FROM Clientes
+            WHERE Documento = @Documento;
+          END
+        `);
 
       const clienteCreado = result.recordset[0];
 

@@ -24,15 +24,15 @@ const ClienteController = {
   // 🔹 Registrar cliente nuevo
   crearCliente: async (req, res) => {
     try {
-      const { Nombre, Documento, Telefono, Correo, Direccion } = req.body;
+      const { Nombre, Documento, Telefono, Correo, Direccion, Ciudad } = req.body;
 
-      if (!Nombre || !Documento || !Telefono || !Correo || !Direccion) {
+      if (!Nombre || !Documento || !Telefono || !Correo || !Direccion || !Ciudad) {
         return res
           .status(400)
           .json({ error: "⚠️ Todos los campos son obligatorios" });
       }
 
-      const nuevoCliente = { Nombre, Documento, Telefono, Correo, Direccion };
+      const nuevoCliente = { Nombre, Documento, Telefono, Correo, Direccion, Ciudad };
 
       const resultado = await ClienteModel.crear(nuevoCliente);
 
