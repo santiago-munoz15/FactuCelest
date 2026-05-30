@@ -3,51 +3,42 @@ import { getConnection, sql } from "../config/db.js";
 
 const normalizarDetalle = (detalle = []) =>
   detalle
-    .map((item) => ({
-      IdProducto: Number(item.IdProducto ?? item.idProducto ?? item.id_producto),
-      Descripcion: item.Descripcion ?? item.descripcion ?? "",
-      Talla: item.Talla ?? item.talla ?? "",
-      Cantidad: Number(item.Cantidad ?? item.cantidad ?? 0),
-      PrecioUnitario: Number(
+    .map((item) => {
+      const cantidad = Number(item.Cantidad ?? item.cantidad ?? 0);
+      const precioUnitario = Number(
         item.PrecioUnitario ??
           item.PrecioVenta ??
           item.precioUnitario ??
           item.precioVenta ??
           0
-      ),
-      Subtotal: Number(
-        item.Subtotal ??
-          item.Total ??
-          item.subtotal ??
-          item.total ??
-          Number(item.Cantidad ?? item.cantidad ?? 0) *
-            Number(
-              item.PrecioUnitario ??
-                item.PrecioVenta ??
-                item.precioUnitario ??
-                item.precioVenta ??
-                0
-            )
-      ),
-    }))
+      );
+
+      return {
+        IdProducto: Number(item.IdProducto ?? item.idProducto ?? item.id_producto),
+        Descripcion: item.Descripcion ?? item.descripcion ?? "",
+        Talla: item.Talla ?? item.talla ?? "",
+        Cantidad: cantidad,
+        PrecioUnitario: precioUnitario,
+        Subtotal: Number(
+          item.Subtotal ?? item.Total ?? item.subtotal ?? item.total ?? cantidad * precioUnitario
+        ),
+      };
+    })
     .filter(
-      (item) =>
-        Number.isFinite(item.IdProducto) && item.IdProducto > 0 && item.Cantidad > 0
+      (item) => Number.isFinite(item.IdProducto) && item.IdProducto > 0 && item.Cantidad > 0
     );
 
 const obtenerSiguienteIdDetalle = async (transaction) => {
   const result = await transaction
     .request()
-    .query(
-      "SELECT ISNULL(MAX(IdDetalleFactura), 0) AS MaxId FROM DetalleFactura WITH (UPDLOCK, HOLDLOCK)"
-    );
+    .query("SELECT ISNULL(MAX(IdDetalleFactura), 0) AS MaxId FROM DetalleFactura WITH (UPDLOCK, HOLDLOCK)");
 
   return Number(result.recordset[0]?.MaxId ?? 0) + 1;
 };
 
 const construirFiltroFacturas = ({ periodo, desde, hasta, busqueda }) => {
   const condiciones = [];
-  const requestBuilder = {};
+  const params = {};
 
   if (periodo === "dia") {
     condiciones.push("CAST(f.Fecha AS date) = CAST(GETDATE() AS date)");
@@ -55,20 +46,20 @@ const construirFiltroFacturas = ({ periodo, desde, hasta, busqueda }) => {
     condiciones.push("YEAR(f.Fecha) = YEAR(GETDATE())");
     condiciones.push("MONTH(f.Fecha) = MONTH(GETDATE())");
   } else if (periodo === "rango" && desde && hasta) {
-    requestBuilder.desde = new Date(`${desde}T00:00:00`);
-    requestBuilder.hasta = new Date(`${hasta}T23:59:59.999`);
+    params.desde = new Date(`${desde}T00:00:00`);
+    params.hasta = new Date(`${hasta}T23:59:59.999`);
     condiciones.push("f.Fecha >= @Desde");
     condiciones.push("f.Fecha <= @Hasta");
   }
 
   if (busqueda) {
-    requestBuilder.busqueda = busqueda;
+    params.busqueda = busqueda;
     condiciones.push(
       "(CONVERT(VARCHAR(30), f.IdFactura) LIKE '%' + @Busqueda + '%' OR CONVERT(VARCHAR(30), c.Documento) LIKE '%' + @Busqueda + '%' OR c.Nombre LIKE '%' + @Busqueda + '%')"
     );
   }
 
-  return { condiciones, requestBuilder };
+  return { condiciones, params };
 };
 
 const FacturaModel = {
@@ -83,6 +74,8 @@ const FacturaModel = {
         Iva,
         Total,
         MetodoPago = "Efectivo",
+        NombreVendedor = null,
+        TelefonoVendedor = null,
         Detalle = [],
       } = factura;
 
@@ -97,10 +90,30 @@ const FacturaModel = {
         .input("Impuesto", sql.Decimal(18, 2), Iva)
         .input("Total", sql.Decimal(18, 2), Total)
         .input("MetodoPago", sql.VarChar(50), MetodoPago)
+        .input("NombreVendedor", sql.VarChar(150), NombreVendedor)
+        .input("TelefonoVendedor", sql.VarChar(30), TelefonoVendedor)
         .query(`
-          INSERT INTO Facturas (IdClienteFK, Fecha, Subtotal, Impuesto, Total, MetodoPago)
+          INSERT INTO Facturas (
+            IdClienteFK,
+            Fecha,
+            Subtotal,
+            Impuesto,
+            Total,
+            MetodoPago,
+            NombreVendedor,
+            TelefonoVendedor
+          )
           OUTPUT INSERTED.IdFactura
-          VALUES (@DocumentoCliente, GETDATE(), @Subtotal, @Impuesto, @Total, @MetodoPago)
+          VALUES (
+            @DocumentoCliente,
+            GETDATE(),
+            @Subtotal,
+            @Impuesto,
+            @Total,
+            @MetodoPago,
+            @NombreVendedor,
+            @TelefonoVendedor
+          )
         `);
 
       const IdFactura = facturaCreada.recordset[0]?.IdFactura;
@@ -145,7 +158,6 @@ const FacturaModel = {
       }
 
       await transaction.commit();
-
       return { success: true, IdFactura };
     } catch (error) {
       try {
@@ -192,15 +204,10 @@ const FacturaModel = {
     }
   },
 
-  obtenerFacturasReporte: async ({
-    periodo = "todos",
-    desde = null,
-    hasta = null,
-    busqueda = "",
-  } = {}) => {
+  obtenerFacturasReporte: async ({ periodo = "todos", desde = null, hasta = null, busqueda = "" } = {}) => {
     try {
       const pool = await getConnection();
-      const { condiciones, requestBuilder } = construirFiltroFacturas({
+      const { condiciones, params } = construirFiltroFacturas({
         periodo,
         desde,
         hasta,
@@ -209,16 +216,16 @@ const FacturaModel = {
 
       const request = pool.request();
 
-      if (requestBuilder.desde) {
-        request.input("Desde", sql.DateTime, requestBuilder.desde);
+      if (params.desde) {
+        request.input("Desde", sql.DateTime, params.desde);
       }
 
-      if (requestBuilder.hasta) {
-        request.input("Hasta", sql.DateTime, requestBuilder.hasta);
+      if (params.hasta) {
+        request.input("Hasta", sql.DateTime, params.hasta);
       }
 
-      if (requestBuilder.busqueda) {
-        request.input("Busqueda", sql.VarChar(100), requestBuilder.busqueda);
+      if (params.busqueda) {
+        request.input("Busqueda", sql.VarChar(100), params.busqueda);
       }
 
       const query = `
@@ -229,13 +236,15 @@ const FacturaModel = {
           f.Impuesto,
           f.Total,
           f.MetodoPago,
+          f.NombreVendedor,
+          f.TelefonoVendedor,
           c.Documento AS DocumentoCliente,
           c.Nombre AS NombreCliente,
           c.Telefono AS TelefonoCliente,
           c.Correo AS CorreoCliente,
           c.Direccion AS DireccionCliente,
           COUNT(df.IdDetalleFactura) AS CantidadProductos,
-          SUM(df.Subtotal) AS TotalDetalle
+          COALESCE(SUM(df.Subtotal), 0) AS TotalDetalle
         FROM Facturas f
         INNER JOIN Clientes c ON f.IdClienteFK = c.Documento
         LEFT JOIN DetalleFactura df ON df.IdFacturaFK = f.IdFactura
@@ -247,6 +256,8 @@ const FacturaModel = {
           f.Impuesto,
           f.Total,
           f.MetodoPago,
+          f.NombreVendedor,
+          f.TelefonoVendedor,
           c.Documento,
           c.Nombre,
           c.Telefono,
@@ -256,7 +267,6 @@ const FacturaModel = {
       `;
 
       const result = await request.query(query);
-
       return { success: true, facturas: result.recordset };
     } catch (error) {
       console.error("❌ Error al obtener reporte de facturas:", error);
@@ -278,6 +288,8 @@ const FacturaModel = {
             f.Impuesto,
             f.Total,
             f.MetodoPago,
+            f.NombreVendedor,
+            f.TelefonoVendedor,
             c.Documento AS DocumentoCliente,
             c.Nombre AS NombreCliente,
             c.Telefono AS TelefonoCliente,
@@ -327,6 +339,8 @@ const FacturaModel = {
         Iva,
         Total,
         MetodoPago = "Efectivo",
+        NombreVendedor = null,
+        TelefonoVendedor = null,
         Detalle = [],
       } = factura;
 
@@ -342,6 +356,8 @@ const FacturaModel = {
         .input("Impuesto", sql.Decimal(18, 2), Iva)
         .input("Total", sql.Decimal(18, 2), Total)
         .input("MetodoPago", sql.VarChar(50), MetodoPago)
+        .input("NombreVendedor", sql.VarChar(150), NombreVendedor)
+        .input("TelefonoVendedor", sql.VarChar(30), TelefonoVendedor)
         .query(`
           UPDATE Facturas
           SET
@@ -349,13 +365,13 @@ const FacturaModel = {
             Subtotal = @Subtotal,
             Impuesto = @Impuesto,
             Total = @Total,
-            MetodoPago = @MetodoPago
+            MetodoPago = @MetodoPago,
+            NombreVendedor = @NombreVendedor,
+            TelefonoVendedor = @TelefonoVendedor
           WHERE IdFactura = @IdFactura;
-
-          SELECT @@ROWCOUNT AS FilasAfectadas;
         `);
 
-      const filasAfectadas = Number(updateResult.recordset[0]?.FilasAfectadas ?? 0);
+      const filasAfectadas = updateResult.rowsAffected?.[0] ?? 0;
 
       if (filasAfectadas === 0) {
         throw new Error("Factura no encontrada para actualizar");
@@ -402,7 +418,6 @@ const FacturaModel = {
       }
 
       await transaction.commit();
-
       return { success: true, IdFactura: Number(idFactura) };
     } catch (error) {
       try {

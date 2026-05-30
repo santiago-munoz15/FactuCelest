@@ -75,6 +75,8 @@ const FacturaController = {
         Iva,
         Total,
         MetodoPago = "Efectivo",
+        NombreVendedor = null,
+        TelefonoVendedor = null,
         Detalle = [],
       } = req.body;
 
@@ -112,6 +114,8 @@ const FacturaController = {
         Iva,
         Total,
         MetodoPago,
+        NombreVendedor,
+        TelefonoVendedor,
         Detalle,
       });
 
@@ -232,6 +236,8 @@ const FacturaController = {
         Iva,
         Total,
         MetodoPago = "Efectivo",
+        NombreVendedor = null,
+        TelefonoVendedor = null,
         Detalle = [],
       } = req.body;
 
@@ -249,6 +255,8 @@ const FacturaController = {
         Iva,
         Total,
         MetodoPago,
+        NombreVendedor,
+        TelefonoVendedor,
         Detalle,
       });
 
@@ -276,7 +284,6 @@ const FacturaController = {
   descargarFacturaExcel: async (req, res) => {
     try {
       const { id } = req.params;
-      const vendedor = req.query.vendedor?.trim() || "SARA";
 
       const result = await FacturaModel.obtenerFacturaPorId(id);
 
@@ -286,6 +293,11 @@ const FacturaController = {
           error: result.error,
         });
       }
+
+      const vendedor =
+        result.factura.NombreVendedor?.trim() ||
+        req.query.vendedor?.trim() ||
+        "SARA";
 
       const filas = construirFilasExcel(result.factura, vendedor);
       const worksheet = XLSX.utils.aoa_to_sheet(filas);

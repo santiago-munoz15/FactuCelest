@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { getConnection } from "./config/db.js";
+import { ensureDatabaseSchema } from "./config/db.js";
 import ClienteRoutes from "./routes/ClienteRoutes.js";
 
 // 🔹 Importar rutas
@@ -9,6 +10,7 @@ import ProductoRouter from "./routes/ProductoRoutes.js";
 import CategoriaRouter from "./routes/CategoriaRouter.js";
 import ProveedorRouter from "./routes/ProveedorRouter.js";
 import UsuarioRouter from "./routes/UsuarioRoutes.js";
+import VendedorRouter from "./routes/VendedorRoutes.js";
 import FacturaRouter from "./routes/FacturaRoutes.js";
 
 const app = express();
@@ -22,6 +24,7 @@ app.use("/api/productos", ProductoRouter);
 app.use("/api/categorias", CategoriaRouter);
 app.use("/api/proveedores", ProveedorRouter);
 app.use("/api/usuarios", UsuarioRouter);
+app.use("/api/vendedores", VendedorRouter);
 app.use("/api/clientes", ClienteRoutes);
 app.use("/api/facturas", FacturaRouter);
 
@@ -29,4 +32,7 @@ app.use("/api/facturas", FacturaRouter);
 app.listen(process.env.PORT, () => {
   console.log("✅ Servidor corriendo en el puerto:", process.env.PORT);
   getConnection();
+  ensureDatabaseSchema().catch((error) => {
+    console.error("❌ Error inicializando el esquema:", error);
+  });
 });

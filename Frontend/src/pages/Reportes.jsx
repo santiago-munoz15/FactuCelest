@@ -354,9 +354,7 @@ function Reportes() {
   const descargarExcel = async (idFactura) => {
     try {
       const res = await axios.get(
-        buildApiUrl(
-          `/api/facturas/excel/${idFactura}?vendedor=${encodeURIComponent(vendedor)}`
-        ),
+        buildApiUrl(`/api/facturas/excel/${idFactura}`),
         { responseType: "blob" }
       );
 
@@ -676,7 +674,9 @@ function Reportes() {
                     </div>
                     <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-3">
                       <p className="text-gray-500 dark:text-gray-400">Vendedor</p>
-                      <p className="font-semibold text-gray-800 dark:text-gray-100">{vendedor}</p>
+                      <p className="font-semibold text-gray-800 dark:text-gray-100">
+                        {facturaEnVista.NombreVendedor || vendedor}
+                      </p>
                       <p className="text-gray-600 dark:text-gray-300">Reporte de ventas</p>
                     </div>
                   </div>

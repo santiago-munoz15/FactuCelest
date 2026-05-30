@@ -11,11 +11,21 @@ import { buildApiUrl } from "../config/api";
 export default function Facturacion() {
   const [cedula, setCedula] = useState("");
   const [cliente, setCliente] = useState(null);
+  const [vendedorNombre, setVendedorNombre] = useState("");
+  const [vendedorTelefono, setVendedorTelefono] = useState("");
+  const [vendedorId, setVendedorId] = useState(null);
+  const [vendedores, setVendedores] = useState([]);
+  const [mostrarModalVendedor, setMostrarModalVendedor] = useState(false);
+  const [nuevoVendedor, setNuevoVendedor] = useState({
+    Nombre: "",
+    Telefono: "",
+  });
   const [productos, setProductos] = useState([]);
   const [detalle, setDetalle] = useState([]);
   const [mostrarModalCliente, setMostrarModalCliente] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
+  const [resultadosVendedor, setResultadosVendedor] = useState([]);
   const [metodoPago, setMetodoPago] = useState("Efectivo");
 
   const [totales, setTotales] = useState({
@@ -32,6 +42,20 @@ export default function Facturacion() {
       .catch((err) => console.error("Error cargando productos:", err));
   }, []);
 
+  // 🔹 Cargar vendedores desde la base de datos
+  useEffect(() => {
+    axios
+      .get(buildApiUrl("/api/vendedores"))
+      .then((res) => {
+        if (res.data.success) {
+          setVendedores(res.data.vendedores || []);
+        }
+      })
+      .catch((error) => {
+        console.error("Error cargando vendedores:", error);
+      });
+  }, []);
+
   const handleBuscarProducto = (texto) => {
     setBusqueda(texto);
     if (texto.trim() === "") {
@@ -43,6 +67,96 @@ export default function Facturacion() {
       p.Descripcion.toLowerCase().includes(texto.toLowerCase())
     );
     setResultadosBusqueda(resultados);
+  };
+
+  const handleBuscarVendedor = (texto) => {
+    setVendedorNombre(texto);
+    setVendedorId(null);
+
+    if (texto.trim() === "") {
+      setResultadosVendedor([]);
+      setVendedorTelefono("");
+      return;
+    }
+
+    const coincidencias = vendedores.filter((vendedor) =>
+      vendedor.Nombre.toLowerCase().includes(texto.toLowerCase())
+    );
+
+    setResultadosVendedor(coincidencias);
+
+    if (coincidencias.length === 1 && coincidencias[0].Nombre.toLowerCase() === texto.toLowerCase()) {
+      setVendedorTelefono(coincidencias[0].Telefono || "");
+    }
+  };
+
+  const seleccionarVendedor = (vendedor) => {
+    setVendedorNombre(vendedor.Nombre);
+    setVendedorTelefono(vendedor.Telefono || "");
+    setVendedorId(vendedor.IdVendedor || null);
+    setResultadosVendedor([]);
+  };
+
+  const guardarVendedor = async () => {
+    const nombre = nuevoVendedor.Nombre.trim();
+    const telefono = nuevoVendedor.Telefono.trim();
+
+    if (!nombre || !telefono) {
+      showErrorAlert(
+        "Campos incompletos",
+        "Debes ingresar el nombre y el teléfono del vendedor"
+      );
+      return;
+    }
+
+    const existe = vendedores.some(
+      (vendedor) => vendedor.Nombre.toLowerCase() === nombre.toLowerCase()
+    );
+
+    if (existe) {
+      showInfoAlert(
+        "Vendedor duplicado",
+        "Ya existe un vendedor con ese nombre. Puedes buscarlo en el listado."
+      );
+      return;
+    }
+
+    try {
+      const res = await axios.post(buildApiUrl("/api/vendedores"), {
+        Nombre: nombre,
+        Telefono: telefono,
+      });
+
+      if (res.data.success) {
+        const vendedorCreado = res.data.vendedor;
+        setVendedores((actual) => {
+          const existe = actual.some(
+            (item) =>
+              String(item.IdVendedor ?? "") === String(vendedorCreado.IdVendedor ?? "") ||
+              item.Nombre.toLowerCase() === vendedorCreado.Nombre.toLowerCase()
+          );
+
+          const siguienteLista = existe ? actual : [...actual, vendedorCreado];
+
+          return siguienteLista.sort((a, b) => a.Nombre.localeCompare(b.Nombre));
+        });
+        setVendedorNombre(vendedorCreado.Nombre);
+        setVendedorTelefono(vendedorCreado.Telefono || "");
+        setVendedorId(vendedorCreado.IdVendedor || null);
+        setResultadosVendedor([]);
+        setMostrarModalVendedor(false);
+        setNuevoVendedor({ Nombre: "", Telefono: "" });
+        await showSuccessAlert(
+          "Vendedor agregado",
+          `${vendedorCreado.Nombre} quedó disponible para facturar`
+        );
+      } else {
+        showErrorAlert("Error", res.data.error || "No se pudo registrar el vendedor");
+      }
+    } catch (error) {
+      console.error("Error registrando vendedor:", error);
+      showErrorAlert("Error", "No se pudo registrar el vendedor");
+    }
   };
 
   // 🔹 Buscar cliente
@@ -134,6 +248,9 @@ export default function Facturacion() {
         Iva: totales.iva,
         Total: totales.total,
         MetodoPago: metodoPago,
+        NombreVendedor: vendedorNombre,
+        TelefonoVendedor: vendedorTelefono,
+        IdVendedor: vendedorId,
         Detalle: detalle, // Enviar productos
       };
 
@@ -176,6 +293,14 @@ export default function Facturacion() {
       return;
     }
 
+    if (!vendedorNombre.trim()) {
+      showErrorAlert(
+        "Vendedor requerido",
+        "Debes seleccionar o registrar un vendedor"
+      );
+      return;
+    }
+
     if (detalle.length === 0) {
       showErrorAlert("Sin productos", "Debes agregar al menos un producto");
       return;
@@ -187,6 +312,9 @@ export default function Facturacion() {
       // Reinicia el formulario
       setCedula("");
       setCliente(null);
+      setVendedorNombre("");
+      setVendedorTelefono("");
+      setVendedorId(null);
       setDetalle([]);
       setMetodoPago("Efectivo");
       setTotales({ subtotal: 0, iva: 0, total: 0 });
@@ -202,6 +330,66 @@ export default function Facturacion() {
         <p className="text-gray-600 dark:text-gray-400">
           Registra nuevas facturas y gestiona clientes
         </p>
+      </div>
+
+      {/* Buscar vendedor */}
+      <div className="rounded-2xl bg-white dark:bg-gray-800 p-4 md:p-5 shadow-sm border border-gray-100 dark:border-gray-700 space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center gap-3">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              placeholder="Nombre de vendedor"
+              value={vendedorNombre}
+              onChange={(e) => handleBuscarVendedor(e.target.value)}
+              className="app-input w-full"
+            />
+
+            {resultadosVendedor.length > 0 && (
+              <ul className="absolute bg-white dark:bg-gray-800 border-2 border-cyan-500 dark:border-cyan-400 rounded-2xl mt-2 w-full max-h-52 overflow-y-auto shadow-2xl z-20">
+                {resultadosVendedor.map((vendedor, index) => (
+                  <li
+                    key={`${vendedor.Nombre}-${index}`}
+                    className="px-4 py-3 hover:bg-cyan-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 text-gray-800 dark:text-gray-200"
+                    onClick={() => seleccionarVendedor(vendedor)}
+                  >
+                    <span className="font-semibold">{vendedor.Nombre}</span>
+                    <span className="float-right text-cyan-600 dark:text-cyan-400 font-bold">
+                      {vendedor.Telefono}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <button
+            onClick={() => setMostrarModalVendedor(true)}
+            className="app-btn-secondary w-full md:w-auto px-6 py-3"
+          >
+            ➕ Agregar vendedor
+          </button>
+        </div>
+
+        {vendedorNombre && !vendedores.some((item) => item.Nombre.toLowerCase() === vendedorNombre.toLowerCase()) && (
+          <p className="text-sm text-amber-600 dark:text-amber-400">
+            El vendedor no existe en el catálogo. Puedes registrarlo con el botón de agregar.
+          </p>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-3">
+            <p className="text-gray-500 dark:text-gray-400">Vendedor seleccionado</p>
+            <p className="font-semibold text-gray-800 dark:text-gray-100">
+              {vendedorNombre || "Sin seleccionar"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-3">
+            <p className="text-gray-500 dark:text-gray-400">Teléfono</p>
+            <p className="font-semibold text-gray-800 dark:text-gray-100">
+              {vendedorTelefono || "No registrado"}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Buscar cliente */}
@@ -477,6 +665,68 @@ export default function Facturacion() {
           onClose={() => setMostrarModalCliente(false)}
           onClienteCreado={setCliente}
         />
+      )}
+
+      {/* Modal vendedor */}
+      {mostrarModalVendedor && (
+        <div
+          className="fixed inset-0 flex justify-center items-center z-50 animate-fadeIn px-4"
+          style={{
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <div className="bg-white dark:bg-gray-800 p-5 md:p-8 rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl transform animate-slideIn">
+            <h3 className="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-gray-100">
+              👔 Registrar Vendedor
+            </h3>
+
+            <div className="space-y-4">
+              <input
+                name="Nombre"
+                placeholder="Nombre del vendedor"
+                value={nuevoVendedor.Nombre}
+                onChange={(e) =>
+                  setNuevoVendedor((actual) => ({
+                    ...actual,
+                    Nombre: e.target.value,
+                  }))
+                }
+                className="border-2 border-gray-200 dark:border-gray-600 p-3 w-full rounded-xl focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              />
+
+              <input
+                name="Telefono"
+                placeholder="Teléfono"
+                value={nuevoVendedor.Telefono}
+                onChange={(e) =>
+                  setNuevoVendedor((actual) => ({
+                    ...actual,
+                    Telefono: e.target.value,
+                  }))
+                }
+                className="border-2 border-gray-200 dark:border-gray-600 p-3 w-full rounded-xl focus:border-cyan-500 dark:focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-800 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+
+            <button
+              onClick={guardarVendedor}
+              className="mt-6 bg-gradient-to-r from-cyan-500 to-cyan-700 text-white p-3 w-full rounded-xl font-semibold hover:from-cyan-600 hover:to-cyan-800 transition-all shadow-lg"
+            >
+              Guardar Vendedor
+            </button>
+
+            <button
+              onClick={() => {
+                setMostrarModalVendedor(false);
+                setNuevoVendedor({ Nombre: "", Telefono: "" });
+              }}
+              className="mt-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-sm font-medium w-full text-center transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
