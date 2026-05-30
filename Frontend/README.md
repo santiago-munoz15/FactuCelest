@@ -1,16 +1,51 @@
-# React + Vite
+# FactuCelest Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este repositorio contiene únicamente el frontend del sistema FactuCelest. Está hecho con React + Vite y se conecta a un backend externo mediante la variable de entorno `VITE_API_URL`.
 
-Currently, two official plugins are available:
+## Requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js 18 o superior
+- npm
 
-## React Compiler
+## Ejecutar en la PC
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+1. Abrir una terminal dentro de la carpeta `Frontend`.
+2. Instalar dependencias:
 
-## Expanding the ESLint configuration
+```bash
+npm install
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+3. Crear un archivo `.env` basado en `.env.example` y definir la URL del backend.
+4. Iniciar la aplicación:
+
+```bash
+npm run dev
+```
+
+La app se abrirá normalmente en `http://localhost:5173`.
+
+## Variables de entorno
+
+- `VITE_API_URL`: URL del backend que consume el frontend. Si el backend está desplegado, aquí debe ir su URL pública.
+
+Ejemplo:
+
+```env
+VITE_API_URL=https://tu-backend-en-render.onrender.com
+```
+
+## Generar versión de entrega
+
+Si quieres entregar el frontend listo para compilar:
+
+```bash
+npm install
+npm run build
+```
+
+Luego se genera la carpeta `dist`, que contiene los archivos compilados.
+
+## Nota para el profesor
+
+Si solo va a ejecutar el frontend en su PC, no necesita levantar el backend localmente. Solo debe configurar `VITE_API_URL` con una URL válida del backend para que la aplicación funcione correctamente.

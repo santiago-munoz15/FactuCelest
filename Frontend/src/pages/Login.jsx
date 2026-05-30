@@ -37,6 +37,7 @@ export default function Login() {
       });
 
       if (res.status === 200) {
+        localStorage.setItem("usuario", JSON.stringify(res.data.usuario));
         await showSuccessAlert("¡Bienvenido!", "Inicio de sesión exitoso");
         navigate("/menu");
       }
