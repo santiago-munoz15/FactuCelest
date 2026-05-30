@@ -546,12 +546,13 @@ function Reportes() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-sm">
+              <table className="w-full min-w-[1050px] text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Factura</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Cliente</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Documento</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Vendedor</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Fecha</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Método</th>
                     <th className="text-right px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Total</th>
@@ -561,13 +562,13 @@ function Reportes() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="7" className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
+                      <td colSpan="8" className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
                         ⏳ Cargando facturas...
                       </td>
                     </tr>
                   ) : facturas.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
+                      <td colSpan="8" className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
                         No hay facturas para el filtro seleccionado.
                       </td>
                     </tr>
@@ -588,6 +589,7 @@ function Reportes() {
                           <td className="px-4 py-3 font-semibold text-gray-800 dark:text-gray-100">#{factura.IdFactura}</td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{factura.NombreCliente}</td>
                           <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{factura.DocumentoCliente}</td>
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{factura.NombreVendedor || vendedor}</td>
                           <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{formatDate(factura.Fecha)}</td>
                           <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{factura.MetodoPago}</td>
                           <td className="px-4 py-3 text-right font-bold text-cyan-700 dark:text-cyan-400">
