@@ -184,41 +184,32 @@ export default function Facturacion() {
   };
 
   // 🔹 Buscar cliente
-  const handleBuscarCliente = async () => {
-    if (!nombreClienteBusqueda.trim()) {
-      showErrorAlert("Campo requerido", "Ingresa el nombre del cliente antes de buscar");
+  const handleBuscarCliente = async (textoBusqueda = nombreClienteBusqueda) => {
+    const termino = textoBusqueda.trim();
+
+    if (!termino) {
+      setCliente(null);
+      setResultadosCliente([]);
       return;
     }
 
     try {
       const res = await axios.get(
-        buildApiUrl(`/api/clientes/buscar?nombre=${encodeURIComponent(nombreClienteBusqueda)}`)
+        buildApiUrl(`/api/clientes/buscar?nombre=${encodeURIComponent(termino)}`)
       );
 
       if (res.data.success) {
         const clientes = res.data.data || [];
         setResultadosCliente(clientes);
-
-        if (clientes.length === 1) {
-          setCliente(clientes[0]);
-          setNombreClienteBusqueda(clientes[0].Nombre || "");
-          setResultadosCliente([]);
-          showSuccessAlert(
-            "Cliente encontrado",
-            `Seleccionado ${clientes[0].Nombre}`
-          );
-        }
       } else {
-        showErrorAlert(
-          "No encontrado",
-          res.data.message || "Cliente no encontrado"
-        );
-        setCliente(null);
         setResultadosCliente([]);
+        setCliente(null);
       }
     } catch (error) {
       console.error("Error buscando cliente:", error);
-      showErrorAlert("Error", "Cliente no encontrado o error de conexión");
+      if (error.response?.status !== 404) {
+        showErrorAlert("Error", "Cliente no encontrado o error de conexión");
+      }
       setCliente(null);
       setResultadosCliente([]);
     }
@@ -737,7 +728,12 @@ export default function Facturacion() {
             type="text"
             placeholder="Nombre del cliente"
             value={nombreClienteBusqueda}
-            onChange={(e) => setNombreClienteBusqueda(e.target.value)}
+            onChange={(e) => {
+              const valor = e.target.value;
+              setNombreClienteBusqueda(valor);
+              setCliente(null);
+              handleBuscarCliente(valor);
+            }}
             className="app-input border-gray-300 dark:border-gray-500 shadow-sm"
           />
 
@@ -1023,9 +1019,12 @@ export default function Facturacion() {
 
       <button
         onClick={handleGenerarFactura}
-        className="app-btn-primary w-full px-6 py-4 font-bold text-base md:text-lg"
+        className="w-full px-6 py-4 rounded-2xl font-black text-base md:text-lg text-white shadow-2xl transition-all duration-300 bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-600 hover:from-cyan-600 hover:via-teal-600 hover:to-emerald-700 hover:-translate-y-0.5 hover:shadow-cyan-500/30 border border-white/10"
       >
-        ✨ Generar Factura
+        <span className="inline-flex items-center justify-center gap-2">
+          <span className="text-xl">🧾</span>
+          <span>Generar factura</span>
+        </span>
       </button>
 
       {/* Modal registro cliente */}

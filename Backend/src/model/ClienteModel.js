@@ -59,7 +59,7 @@ const ClienteModel = {
             Direccion,
             Ciudad
           FROM Clientes
-          WHERE Nombre LIKE '%' + @Nombre + '%'
+          WHERE Nombre LIKE @Nombre + '%'
           ORDER BY Nombre ASC
         `);
 
