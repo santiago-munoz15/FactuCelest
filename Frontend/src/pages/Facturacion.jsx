@@ -4,9 +4,25 @@ import {
   showSuccessAlert,
   showErrorAlert,
   showInfoAlert,
+  showConfirmAlert,
 } from "../utils/sweetAlertHelper";
 import ModalCliente from "../components/ModalCliente";
 import { buildApiUrl } from "../config/api";
+
+const formatearMoneda = (valor) =>
+  new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    maximumFractionDigits: 0,
+  }).format(Number(valor || 0));
+
+const escaparHtml = (texto = "") =>
+  String(texto)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 export default function Facturacion() {
   const [cedula, setCedula] = useState("");
@@ -239,6 +255,243 @@ export default function Facturacion() {
     setDetalle(detalle.filter((item) => item.IdProducto !== id));
   };
 
+  const imprimirFactura = async (idFactura) => {
+    try {
+      const res = await axios.get(buildApiUrl(`/api/facturas/detalle/${idFactura}`));
+
+      if (!res.data.success || !res.data.factura) {
+        showErrorAlert(
+          "Error",
+          res.data.error || "No se pudo cargar la factura para imprimir"
+        );
+        return false;
+      }
+
+      const factura = res.data.factura;
+      const detalleFactura = factura.Detalle || [];
+      const fechaFactura = factura.Fecha
+        ? new Date(factura.Fecha).toLocaleString("es-CO", {
+            dateStyle: "short",
+            timeStyle: "short",
+          })
+        : new Date().toLocaleString("es-CO");
+
+      const filasDetalle = detalleFactura
+        .map(
+          (item) => `
+            <tr>
+              <td>${escaparHtml(item.Descripcion || "")}</td>
+              <td style="text-align:center;">${escaparHtml(item.Talla || "-")}</td>
+              <td style="text-align:right;">${Number(item.Cantidad || 0)}</td>
+              <td style="text-align:right;">${formatearMoneda(item.PrecioUnitario ?? item.PrecioVenta ?? 0)}</td>
+              <td style="text-align:right;">${formatearMoneda(item.Total || 0)}</td>
+            </tr>
+          `
+        )
+        .join("");
+
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      iframe.style.visibility = "hidden";
+      document.body.appendChild(iframe);
+
+      const documento = iframe.contentDocument || iframe.contentWindow?.document;
+
+      if (!documento) {
+        iframe.remove();
+        showErrorAlert("Error", "No fue posible abrir la ventana de impresión");
+        return false;
+      }
+
+      documento.open();
+      documento.write(`
+        <!doctype html>
+        <html lang="es">
+          <head>
+            <meta charset="UTF-8" />
+            <title>Factura #${escaparHtml(factura.IdFactura)}</title>
+            <style>
+              @page { margin: 14mm; }
+              body {
+                font-family: Arial, Helvetica, sans-serif;
+                color: #111827;
+                margin: 0;
+                padding: 0;
+              }
+              .sheet {
+                max-width: 900px;
+                margin: 0 auto;
+                padding: 24px;
+              }
+              .header {
+                display: flex;
+                justify-content: space-between;
+                gap: 16px;
+                border-bottom: 2px solid #0f766e;
+                padding-bottom: 16px;
+                margin-bottom: 20px;
+              }
+              .brand {
+                font-size: 24px;
+                font-weight: 800;
+                color: #0f766e;
+              }
+              .meta {
+                text-align: right;
+                font-size: 13px;
+                line-height: 1.5;
+              }
+              .grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px 20px;
+                margin-bottom: 20px;
+                font-size: 13px;
+              }
+              .label {
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: #6b7280;
+                margin-bottom: 4px;
+              }
+              .value {
+                font-weight: 600;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 12px;
+                font-size: 13px;
+              }
+              thead th {
+                background: #ecfeff;
+                color: #0f172a;
+                text-align: left;
+                padding: 10px 8px;
+                border-bottom: 1px solid #cbd5e1;
+              }
+              tbody td {
+                padding: 10px 8px;
+                border-bottom: 1px solid #e5e7eb;
+              }
+              .totals {
+                margin-top: 20px;
+                display: flex;
+                justify-content: flex-end;
+              }
+              .totals-box {
+                min-width: 280px;
+                border: 1px solid #cbd5e1;
+                border-radius: 14px;
+                padding: 14px 16px;
+              }
+              .totals-row {
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+                font-size: 13px;
+                margin: 6px 0;
+              }
+              .totals-row.total {
+                font-size: 15px;
+                font-weight: 800;
+                border-top: 1px solid #cbd5e1;
+                padding-top: 10px;
+                margin-top: 10px;
+              }
+              .footer {
+                margin-top: 24px;
+                font-size: 12px;
+                color: #6b7280;
+                text-align: center;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="sheet">
+              <div class="header">
+                <div>
+                  <div class="brand">FactuCelest</div>
+                  <div>Sistema de facturación</div>
+                </div>
+                <div class="meta">
+                  <div><strong>Factura #${escaparHtml(factura.IdFactura)}</strong></div>
+                  <div>${escaparHtml(fechaFactura)}</div>
+                </div>
+              </div>
+
+              <div class="grid">
+                <div>
+                  <div class="label">Cliente</div>
+                  <div class="value">${escaparHtml(factura.NombreCliente || "")}</div>
+                </div>
+                <div>
+                  <div class="label">Documento</div>
+                  <div class="value">${escaparHtml(factura.DocumentoCliente || "")}</div>
+                </div>
+                <div>
+                  <div class="label">Vendedor</div>
+                  <div class="value">${escaparHtml(factura.NombreVendedor || vendedorNombre || "")}</div>
+                </div>
+                <div>
+                  <div class="label">Método de pago</div>
+                  <div class="value">${escaparHtml(factura.MetodoPago || metodoPago || "")}</div>
+                </div>
+              </div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th style="text-align:center;">Talla</th>
+                    <th style="text-align:right;">Cant.</th>
+                    <th style="text-align:right;">P. unitario</th>
+                    <th style="text-align:right;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${filasDetalle}
+                </tbody>
+              </table>
+
+              <div class="totals">
+                <div class="totals-box">
+                  <div class="totals-row"><span>Subtotal</span><span>${formatearMoneda(factura.Subtotal || 0)}</span></div>
+                  <div class="totals-row"><span>IVA</span><span>${formatearMoneda(factura.Iva || 0)}</span></div>
+                  <div class="totals-row total"><span>Total</span><span>${formatearMoneda(factura.Total || 0)}</span></div>
+                </div>
+              </div>
+
+              <div class="footer">Documento generado por FactuCelest</div>
+            </div>
+          </body>
+        </html>
+      `);
+      documento.close();
+
+      setTimeout(() => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } finally {
+          setTimeout(() => iframe.remove(), 1000);
+        }
+      }, 250);
+
+      return true;
+    } catch (error) {
+      console.error("Error imprimiendo factura:", error);
+      showErrorAlert("Error", "No se pudo preparar la impresión de la factura");
+      return false;
+    }
+  };
+
   // 🔹 Guardar factura en el backend
   const guardarFactura = async () => {
     try {
@@ -265,13 +518,13 @@ export default function Facturacion() {
           "¡Factura creada!",
           `Factura #${res.data.IdFactura} registrada correctamente`
         );
-        return true;
+        return { success: true, IdFactura: res.data.IdFactura };
       } else {
         showErrorAlert(
           "Error",
           res.data.error || "No se pudo guardar la factura"
         );
-        return false;
+        return { success: false };
       }
     } catch (error) {
       console.error("❌ Error guardando factura:", error);
@@ -279,7 +532,7 @@ export default function Facturacion() {
         "Error",
         error.response?.data?.error || "No se pudo guardar la factura"
       );
-      return false;
+      return { success: false };
     }
   };
 
@@ -308,7 +561,16 @@ export default function Facturacion() {
 
     const guardada = await guardarFactura();
 
-    if (guardada) {
+    if (guardada?.success) {
+      const decision = await showConfirmAlert(
+        "Factura generada",
+        "¿Deseas imprimir la factura recién creada?"
+      );
+
+      if (decision.isConfirmed) {
+        await imprimirFactura(guardada.IdFactura);
+      }
+
       // Reinicia el formulario
       setCedula("");
       setCliente(null);

@@ -3,6 +3,7 @@ import axios from "axios";
 import {
   showErrorAlert,
   showInfoAlert,
+  showConfirmAlert,
   showSuccessAlert,
 } from "../utils/sweetAlertHelper";
 import { buildApiUrl } from "../config/api";
@@ -22,6 +23,14 @@ const currencyFormatter = new Intl.NumberFormat("es-CO", {
 });
 
 const formatCurrency = (value) => currencyFormatter.format(Number(value || 0));
+
+const escaparHtml = (texto = "") =>
+  String(texto)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 const formatDate = (value) => {
   const date = new Date(value);
@@ -380,6 +389,238 @@ function Reportes() {
     }
   };
 
+  const reimprimirFactura = async (factura) => {
+    if (!factura?.IdFactura) {
+      showErrorAlert("Sin factura", "Selecciona una factura para reimprimirla");
+      return;
+    }
+
+    const decision = await showConfirmAlert(
+      "Reimprimir factura",
+      `¿Deseas imprimir la factura #${factura.IdFactura}?`
+    );
+
+    if (!decision.isConfirmed) {
+      return;
+    }
+
+    const detalle = factura.Detalle || [];
+    const fechaFactura = factura.Fecha
+      ? new Date(factura.Fecha).toLocaleString("es-CO", {
+          dateStyle: "short",
+          timeStyle: "short",
+        })
+      : new Date().toLocaleString("es-CO");
+
+    const filasDetalle = detalle
+      .map(
+        (item) => `
+          <tr>
+            <td>${escaparHtml(item.Descripcion || item.Referencia || "")}</td>
+            <td style="text-align:center;">${escaparHtml(item.Talla || "-")}</td>
+            <td style="text-align:right;">${Number(item.Cantidad || 0)}</td>
+            <td style="text-align:right;">${formatCurrency(item.PrecioUnitario ?? 0)}</td>
+            <td style="text-align:right;">${formatCurrency(item.Subtotal ?? item.Total ?? 0)}</td>
+          </tr>
+        `
+      )
+      .join("");
+
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.visibility = "hidden";
+    document.body.appendChild(iframe);
+
+    const documento = iframe.contentDocument || iframe.contentWindow?.document;
+
+    if (!documento) {
+      iframe.remove();
+      showErrorAlert("Error", "No fue posible abrir la ventana de impresión");
+      return;
+    }
+
+    documento.open();
+    documento.write(`
+      <!doctype html>
+      <html lang="es">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Factura #${escaparHtml(factura.IdFactura)}</title>
+          <style>
+            @page { margin: 14mm; }
+            body {
+              font-family: Arial, Helvetica, sans-serif;
+              color: #111827;
+              margin: 0;
+              padding: 0;
+            }
+            .sheet {
+              max-width: 900px;
+              margin: 0 auto;
+              padding: 24px;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              gap: 16px;
+              border-bottom: 2px solid #0f766e;
+              padding-bottom: 16px;
+              margin-bottom: 20px;
+            }
+            .brand {
+              font-size: 24px;
+              font-weight: 800;
+              color: #0f766e;
+            }
+            .meta {
+              text-align: right;
+              font-size: 13px;
+              line-height: 1.5;
+            }
+            .grid {
+              display: grid;
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 12px 20px;
+              margin-bottom: 20px;
+              font-size: 13px;
+            }
+            .label {
+              font-size: 11px;
+              text-transform: uppercase;
+              letter-spacing: 0.08em;
+              color: #6b7280;
+              margin-bottom: 4px;
+            }
+            .value {
+              font-weight: 600;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 12px;
+              font-size: 13px;
+            }
+            thead th {
+              background: #ecfeff;
+              color: #0f172a;
+              text-align: left;
+              padding: 10px 8px;
+              border-bottom: 1px solid #cbd5e1;
+            }
+            tbody td {
+              padding: 10px 8px;
+              border-bottom: 1px solid #e5e7eb;
+            }
+            .totals {
+              margin-top: 20px;
+              display: flex;
+              justify-content: flex-end;
+            }
+            .totals-box {
+              min-width: 280px;
+              border: 1px solid #cbd5e1;
+              border-radius: 14px;
+              padding: 14px 16px;
+            }
+            .totals-row {
+              display: flex;
+              justify-content: space-between;
+              gap: 12px;
+              font-size: 13px;
+              margin: 6px 0;
+            }
+            .totals-row.total {
+              font-size: 15px;
+              font-weight: 800;
+              border-top: 1px solid #cbd5e1;
+              padding-top: 10px;
+              margin-top: 10px;
+            }
+            .footer {
+              margin-top: 24px;
+              font-size: 12px;
+              color: #6b7280;
+              text-align: center;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="sheet">
+            <div class="header">
+              <div>
+                <div class="brand">FactuCelest</div>
+                <div>Sistema de facturación</div>
+              </div>
+              <div class="meta">
+                <div><strong>Factura #${escaparHtml(factura.IdFactura)}</strong></div>
+                <div>${escaparHtml(fechaFactura)}</div>
+              </div>
+            </div>
+
+            <div class="grid">
+              <div>
+                <div class="label">Cliente</div>
+                <div class="value">${escaparHtml(factura.NombreCliente || "")}</div>
+              </div>
+              <div>
+                <div class="label">Documento</div>
+                <div class="value">${escaparHtml(factura.DocumentoCliente || "")}</div>
+              </div>
+              <div>
+                <div class="label">Vendedor</div>
+                <div class="value">${escaparHtml(factura.NombreVendedor || vendedor || "")}</div>
+              </div>
+              <div>
+                <div class="label">Método de pago</div>
+                <div class="value">${escaparHtml(factura.MetodoPago || "")}</div>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th style="text-align:center;">Talla</th>
+                  <th style="text-align:right;">Cant.</th>
+                  <th style="text-align:right;">P. unitario</th>
+                  <th style="text-align:right;">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filasDetalle}
+              </tbody>
+            </table>
+
+            <div class="totals">
+              <div class="totals-box">
+                <div class="totals-row"><span>Subtotal</span><span>${formatCurrency(factura.Subtotal || 0)}</span></div>
+                <div class="totals-row"><span>IVA</span><span>${formatCurrency(factura.Impuesto ?? factura.Iva ?? 0)}</span></div>
+                <div class="totals-row total"><span>Total</span><span>${formatCurrency(factura.Total || 0)}</span></div>
+              </div>
+            </div>
+
+            <div class="footer">Documento reimpreso desde FactuCelest</div>
+          </div>
+        </body>
+      </html>
+    `);
+    documento.close();
+
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } finally {
+        setTimeout(() => iframe.remove(), 1000);
+      }
+    }, 250);
+  };
+
   const resumenActual = useMemo(() => {
     return facturas.reduce(
       (acc, item) => {
@@ -730,6 +971,12 @@ function Reportes() {
                     className="app-btn-primary px-5 py-3"
                   >
                     ✏️ Editar factura
+                  </button>
+                  <button
+                    onClick={() => reimprimirFactura(facturaEnVista)}
+                    className="app-btn-secondary px-5 py-3"
+                  >
+                    🖨️ Reimprimir factura
                   </button>
                   <button
                     onClick={() => descargarExcel(facturaEnVista.IdFactura)}
