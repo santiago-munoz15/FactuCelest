@@ -598,12 +598,15 @@ export default function Facturacion() {
       <div className="rounded-2xl bg-white dark:bg-gray-800 p-4 md:p-5 shadow-sm border border-gray-100 dark:border-gray-700 space-y-3">
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           <div className="flex-1 relative">
+            <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200">
+              Nombre vendedor
+            </label>
             <input
               type="text"
               placeholder="Nombre de vendedor"
               value={vendedorNombre}
               onChange={(e) => handleBuscarVendedor(e.target.value)}
-              className="app-input w-full"
+              className="app-input w-full border-gray-300 dark:border-gray-500 shadow-sm"
             />
 
             {resultadosVendedor.length > 0 && (
@@ -656,13 +659,18 @@ export default function Facturacion() {
 
       {/* Buscar cliente */}
       <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3 mb-6">
-        <input
-          type="text"
-          placeholder="Cédula del cliente"
-          value={cedula}
-          onChange={(e) => setCedula(e.target.value)}
-          className="app-input flex-1 min-w-0 md:min-w-[200px]"
-        />
+        <div className="flex-1 min-w-0 md:min-w-[200px]">
+          <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200">
+            Cédula del cliente
+          </label>
+          <input
+            type="text"
+            placeholder="Cédula del cliente"
+            value={cedula}
+            onChange={(e) => setCedula(e.target.value)}
+            className="app-input border-gray-300 dark:border-gray-500 shadow-sm"
+          />
+        </div>
         <button
           onClick={handleBuscarCliente}
           className="app-btn-primary w-full md:w-auto px-6 py-3"
@@ -712,12 +720,15 @@ export default function Facturacion() {
 
       {/* Agregar productos */}
       <div className="mb-6 relative">
-          <input
+        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200">
+          Buscar producto
+        </label>
+        <input
           type="text"
           value={busqueda}
           onChange={(e) => handleBuscarProducto(e.target.value)}
-          placeholder="🔍 Buscar producto por nombre..."
-          className="app-input"
+          placeholder="Buscar producto"
+          className="app-input border-gray-300 dark:border-gray-500 shadow-sm"
         />
 
         {resultadosBusqueda.length > 0 && (
