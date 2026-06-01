@@ -5,14 +5,22 @@ import { buildApiUrl } from "../config/api";
 
 function MenuPrincipal() {
   const [facturas, setFacturas] = useState([]);
+  const [productos, setProductos] = useState([]);
+  const [clientesRegistrados, setClientesRegistrados] = useState(0);
   const [ventasMensuales, setVentasMensuales] = useState([]);
+  const [ventasHoyTotal, setVentasHoyTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingVentas, setLoadingVentas] = useState(true);
+  const [loadingResumen, setLoadingResumen] = useState(true);
+  const [loadingClientes, setLoadingClientes] = useState(true);
 
   // Cargar últimas facturas y ventas mensuales al montar el componente
   useEffect(() => {
     fetchUltimasFacturas();
     fetchVentasMensuales();
+    fetchProductos();
+    fetchVentasHoy();
+    fetchClientes();
   }, []);
 
   const fetchUltimasFacturas = async () => {
@@ -38,6 +46,49 @@ function MenuPrincipal() {
     } catch (error) {
       console.error("Error al cargar ventas mensuales:", error);
       setLoadingVentas(false);
+    }
+  };
+
+  const fetchProductos = async () => {
+    try {
+      const res = await axios.get(buildApiUrl("/api/productos/listarp"));
+      if (Array.isArray(res.data)) {
+        setProductos(res.data);
+      }
+    } catch (error) {
+      console.error("Error al cargar productos:", error);
+    } finally {
+      setLoadingResumen(false);
+    }
+  };
+
+  const fetchClientes = async () => {
+    try {
+      const res = await axios.get(buildApiUrl("/api/clientes/listar"));
+      if (res.data.success) {
+        setClientesRegistrados((res.data.clientes || []).length);
+      }
+    } catch (error) {
+      console.error("Error al cargar clientes:", error);
+    } finally {
+      setLoadingClientes(false);
+    }
+  };
+
+  const fetchVentasHoy = async () => {
+    try {
+      const res = await axios.get(buildApiUrl("/api/facturas/reporte?periodo=dia"));
+      if (res.data.success) {
+        const totalHoy = (res.data.facturas || []).reduce(
+          (acc, factura) => acc + Number(factura.Total || 0),
+          0
+        );
+        setVentasHoyTotal(totalHoy);
+      }
+    } catch (error) {
+      console.error("Error al cargar ventas de hoy:", error);
+    } finally {
+      setLoadingResumen(false);
     }
   };
 
@@ -76,6 +127,8 @@ function MenuPrincipal() {
       ? Math.max(...ventasMensuales.map((v) => v.TotalVentas))
       : 0;
 
+  const productosRegistrados = productos.length;
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header del Dashboard */}
@@ -92,7 +145,9 @@ function MenuPrincipal() {
       <div className="grid grid-cols-2 gap-3 md:hidden">
         <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-700 p-4 text-white shadow-lg">
           <p className="text-xs text-cyan-100 mb-2">Hoy</p>
-          <p className="text-xl font-bold">$0</p>
+          <p className="text-xl font-bold">
+            {loadingResumen ? "..." : `$${ventasHoyTotal.toLocaleString("es-CO")}`}
+          </p>
           <p className="text-xs text-cyan-100 mt-1">Ventas</p>
         </div>
         <div className="rounded-2xl bg-gradient-to-br from-orange-500 to-orange-700 p-4 text-white shadow-lg">
@@ -102,12 +157,16 @@ function MenuPrincipal() {
         </div>
         <div className="rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 p-4 text-white shadow-lg">
           <p className="text-xs text-purple-100 mb-2">Total</p>
-          <p className="text-xl font-bold">0</p>
+          <p className="text-xl font-bold">
+            {loadingResumen ? "..." : productosRegistrados}
+          </p>
           <p className="text-xs text-purple-100 mt-1">Productos</p>
         </div>
         <div className="rounded-2xl bg-gradient-to-br from-green-500 to-green-700 p-4 text-white shadow-lg">
           <p className="text-xs text-green-100 mb-2">Activos</p>
-          <p className="text-xl font-bold">0</p>
+          <p className="text-xl font-bold">
+            {loadingClientes ? "..." : clientesRegistrados}
+          </p>
           <p className="text-xs text-green-100 mt-1">Clientes</p>
         </div>
       </div>
@@ -124,7 +183,9 @@ function MenuPrincipal() {
               Hoy
             </span>
           </div>
-          <p className="text-3xl font-bold mb-1">$0</p>
+          <p className="text-3xl font-bold mb-1">
+            {loadingResumen ? "..." : `$${ventasHoyTotal.toLocaleString("es-CO")}`}
+          </p>
           <p className="text-cyan-100 text-sm">Ventas de Hoy</p>
         </div>
 
@@ -152,7 +213,9 @@ function MenuPrincipal() {
               Total
             </span>
           </div>
-          <p className="text-3xl font-bold mb-1">0</p>
+          <p className="text-3xl font-bold mb-1">
+            {loadingResumen ? "..." : productosRegistrados}
+          </p>
           <p className="text-purple-100 text-sm">Productos Registrados</p>
         </div>
 
@@ -166,8 +229,10 @@ function MenuPrincipal() {
               Activos
             </span>
           </div>
-          <p className="text-3xl font-bold mb-1">0</p>
-          <p className="text-green-100 text-sm">Clientes</p>
+          <p className="text-3xl font-bold mb-1">
+            {loadingClientes ? "..." : clientesRegistrados}
+          </p>
+          <p className="text-green-100 text-sm">Clientes Registrados</p>
         </div>
       </div>
 

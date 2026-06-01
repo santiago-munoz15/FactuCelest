@@ -457,26 +457,7 @@ export default function Facturacion() {
                 </div>
               </div>
 
-              <div class="section-title">Datos de la empresa</div>
-              <div class="grid">
-                <div>
-                  <div class="label">Nombre</div>
-                  <div class="value">${escaparHtml(DATOS_EMPRESA.Nombre)}</div>
-                </div>
-                <div>
-                  <div class="label">NIT</div>
-                  <div class="value">${escaparHtml(DATOS_EMPRESA.Nit)}</div>
-                </div>
-                <div>
-                  <div class="label">Ciudad</div>
-                  <div class="value">${escaparHtml(DATOS_EMPRESA.Ciudad)}</div>
-                </div>
-                <div>
-                  <div class="label">Teléfono</div>
-                  <div class="value">${escaparHtml(DATOS_EMPRESA.Telefono)}</div>
-                </div>
-              </div>
-
+              
               <div class="section-title">Datos del cliente</div>
               <div class="grid">
                 <div>

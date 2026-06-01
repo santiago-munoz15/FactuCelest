@@ -70,6 +70,79 @@ const ClienteModel = {
     }
   },
 
+  // 🔹 Actualizar cliente
+  actualizar: async (documento, data) => {
+    try {
+      const pool = await getConnection();
+      const { Nombre, Telefono, Correo, Direccion, Ciudad } = data;
+
+      const result = await pool
+        .request()
+        .input("Documento", sql.BigInt, documento)
+        .input("Nombre", sql.VarChar, Nombre)
+        .input("Telefono", sql.BigInt, Telefono)
+        .input("Correo", sql.VarChar, Correo)
+        .input("Direccion", sql.VarChar, Direccion)
+        .input("Ciudad", sql.VarChar, Ciudad)
+        .query(`
+          UPDATE Clientes
+          SET Nombre = @Nombre,
+              Telefono = @Telefono,
+              Correo = @Correo,
+              Direccion = @Direccion,
+              Ciudad = @Ciudad
+          WHERE Documento = @Documento;
+
+          SELECT Documento, Nombre, Telefono, Correo, Direccion, Ciudad
+          FROM Clientes
+          WHERE Documento = @Documento;
+        `);
+
+      const clienteActualizado = result.recordset[0];
+
+      if (!clienteActualizado) {
+        return { success: false, message: "⚠️ Cliente no encontrado" };
+      }
+
+      return {
+        success: true,
+        message: "✅ Cliente actualizado correctamente.",
+        cliente: clienteActualizado,
+      };
+    } catch (error) {
+      console.error("❌ Error al actualizar cliente:", error);
+      return {
+        success: false,
+        message: "❌ Error interno al actualizar cliente.",
+      };
+    }
+  },
+
+  // 🔹 Eliminar cliente
+  eliminar: async (documento) => {
+    try {
+      const pool = await getConnection();
+      const result = await pool
+        .request()
+        .input("Documento", sql.BigInt, documento)
+        .query(`DELETE FROM Clientes WHERE Documento = @Documento;`);
+
+      return {
+        success: result.rowsAffected[0] > 0,
+        message:
+          result.rowsAffected[0] > 0
+            ? "✅ Cliente eliminado correctamente."
+            : "⚠️ Cliente no encontrado.",
+      };
+    } catch (error) {
+      console.error("❌ Error al eliminar cliente:", error);
+      return {
+        success: false,
+        message: "❌ Error interno al eliminar cliente.",
+      };
+    }
+  },
+
   // 🔹 Crear cliente
   crear: async (data) => {
     try {
