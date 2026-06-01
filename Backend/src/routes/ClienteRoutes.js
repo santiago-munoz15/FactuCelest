@@ -4,6 +4,9 @@ import ClienteController from "../controller/ClienteController.js";
 const router = express.Router();
 
 // 🔹 Buscar cliente por documento
+router.get("/buscar", ClienteController.buscarCliente);
+
+// 🔹 Buscar cliente por documento
 router.get("/buscar/:documento", ClienteController.buscarCliente);
 
 // 🔹 Crear cliente nuevo

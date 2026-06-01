@@ -499,6 +499,14 @@ function Reportes() {
             .value {
               font-weight: 600;
             }
+            .section-title {
+              margin: 18px 0 10px;
+              font-size: 12px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: 0.08em;
+              color: #0f766e;
+            }
             table {
               width: 100%;
               border-collapse: collapse;
@@ -554,7 +562,9 @@ function Reportes() {
             <div class="header">
               <div>
                 <div class="brand">FactuCelest</div>
-                <div>Sistema de facturación</div>
+                <div>${escaparHtml(DATOS_EMPRESA.Nombre)}</div>
+                <div>NIT: ${escaparHtml(DATOS_EMPRESA.Nit)}</div>
+                <div>${escaparHtml(DATOS_EMPRESA.Ciudad)} · ${escaparHtml(DATOS_EMPRESA.Telefono)}</div>
               </div>
               <div class="meta">
                 <div><strong>Factura #${escaparHtml(factura.IdFactura)}</strong></div>
@@ -562,22 +572,51 @@ function Reportes() {
               </div>
             </div>
 
+            <div class="section-title">Datos de la empresa</div>
             <div class="grid">
               <div>
-                <div class="label">Cliente</div>
+                <div class="label">Nombre</div>
+                <div class="value">${escaparHtml(DATOS_EMPRESA.Nombre)}</div>
+              </div>
+              <div>
+                <div class="label">NIT</div>
+                <div class="value">${escaparHtml(DATOS_EMPRESA.Nit)}</div>
+              </div>
+              <div>
+                <div class="label">Ciudad</div>
+                <div class="value">${escaparHtml(DATOS_EMPRESA.Ciudad)}</div>
+              </div>
+              <div>
+                <div class="label">Teléfono</div>
+                <div class="value">${escaparHtml(DATOS_EMPRESA.Telefono)}</div>
+              </div>
+            </div>
+
+            <div class="section-title">Datos del cliente</div>
+            <div class="grid">
+              <div>
+                <div class="label">Nombre</div>
                 <div class="value">${escaparHtml(factura.NombreCliente || "")}</div>
               </div>
               <div>
-                <div class="label">Documento</div>
+                <div class="label">C.C / NIT</div>
                 <div class="value">${escaparHtml(factura.DocumentoCliente || "")}</div>
               </div>
               <div>
-                <div class="label">Vendedor</div>
-                <div class="value">${escaparHtml(factura.NombreVendedor || vendedor || "")}</div>
+                <div class="label">Dirección</div>
+                <div class="value">${escaparHtml(factura.DireccionCliente || "No registrada")}</div>
               </div>
               <div>
-                <div class="label">Método de pago</div>
-                <div class="value">${escaparHtml(factura.MetodoPago || "")}</div>
+                <div class="label">Ciudad</div>
+                <div class="value">${escaparHtml(factura.CiudadCliente || "No registrada")}</div>
+              </div>
+              <div>
+                <div class="label">Teléfono</div>
+                <div class="value">${escaparHtml(factura.TelefonoCliente || "No registrado")}</div>
+              </div>
+              <div>
+                <div class="label">Vendedor / Método de pago</div>
+                <div class="value">${escaparHtml(factura.NombreVendedor || vendedor || "")} · ${escaparHtml(factura.MetodoPago || "")}</div>
               </div>
             </div>
 

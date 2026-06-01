@@ -292,6 +292,7 @@ const FacturaModel = {
             f.TelefonoVendedor,
             c.Documento AS DocumentoCliente,
             c.Nombre AS NombreCliente,
+            c.Ciudad AS CiudadCliente,
             c.Telefono AS TelefonoCliente,
             c.Correo AS CorreoCliente,
             c.Direccion AS DireccionCliente

@@ -41,6 +41,35 @@ const ClienteModel = {
     }
   },
 
+  // 🔹 Buscar clientes por nombre
+  buscarPorNombre: async (nombre) => {
+    try {
+      const pool = await getConnection();
+      const filtro = nombre.trim();
+
+      const result = await pool
+        .request()
+        .input("Nombre", sql.VarChar(150), filtro)
+        .query(`
+          SELECT
+            Documento,
+            Nombre,
+            Telefono,
+            Correo,
+            Direccion,
+            Ciudad
+          FROM Clientes
+          WHERE Nombre LIKE '%' + @Nombre + '%'
+          ORDER BY Nombre ASC
+        `);
+
+      return result.recordset;
+    } catch (error) {
+      console.error("❌ Error al buscar clientes por nombre:", error);
+      throw error;
+    }
+  },
+
   // 🔹 Crear cliente
   crear: async (data) => {
     try {

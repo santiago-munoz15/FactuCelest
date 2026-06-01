@@ -24,8 +24,15 @@ const escaparHtml = (texto = "") =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
+const DATOS_EMPRESA = {
+  Nombre: "INTIMAS CELESTE",
+  Nit: "4268675-2",
+  Ciudad: "Medellin",
+  Telefono: "3174668696",
+};
+
 export default function Facturacion() {
-  const [cedula, setCedula] = useState("");
+  const [nombreClienteBusqueda, setNombreClienteBusqueda] = useState("");
   const [cliente, setCliente] = useState(null);
   const [vendedorNombre, setVendedorNombre] = useState("");
   const [vendedorTelefono, setVendedorTelefono] = useState("");
@@ -41,6 +48,7 @@ export default function Facturacion() {
   const [mostrarModalCliente, setMostrarModalCliente] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
+  const [resultadosCliente, setResultadosCliente] = useState([]);
   const [resultadosVendedor, setResultadosVendedor] = useState([]);
   const [metodoPago, setMetodoPago] = useState("Efectivo");
 
@@ -177,32 +185,49 @@ export default function Facturacion() {
 
   // 🔹 Buscar cliente
   const handleBuscarCliente = async () => {
-    if (!cedula.trim()) {
-      showErrorAlert("Campo requerido", "Ingresa una cédula antes de buscar");
+    if (!nombreClienteBusqueda.trim()) {
+      showErrorAlert("Campo requerido", "Ingresa el nombre del cliente antes de buscar");
       return;
     }
 
     try {
-      const res = await axios.get(buildApiUrl(`/api/clientes/buscar/${cedula}`));
+      const res = await axios.get(
+        buildApiUrl(`/api/clientes/buscar?nombre=${encodeURIComponent(nombreClienteBusqueda)}`)
+      );
 
       if (res.data.success) {
-        setCliente(res.data.data);
-        showSuccessAlert(
-          "Cliente encontrado",
-          `Bienvenido ${res.data.data.Nombre}`
-        );
+        const clientes = res.data.data || [];
+        setResultadosCliente(clientes);
+
+        if (clientes.length === 1) {
+          setCliente(clientes[0]);
+          setNombreClienteBusqueda(clientes[0].Nombre || "");
+          setResultadosCliente([]);
+          showSuccessAlert(
+            "Cliente encontrado",
+            `Seleccionado ${clientes[0].Nombre}`
+          );
+        }
       } else {
         showErrorAlert(
           "No encontrado",
           res.data.message || "Cliente no encontrado"
         );
         setCliente(null);
+        setResultadosCliente([]);
       }
     } catch (error) {
       console.error("Error buscando cliente:", error);
       showErrorAlert("Error", "Cliente no encontrado o error de conexión");
       setCliente(null);
+      setResultadosCliente([]);
     }
+  };
+
+  const seleccionarCliente = (clienteSeleccionado) => {
+    setCliente(clienteSeleccionado);
+    setNombreClienteBusqueda(clienteSeleccionado.Nombre || "");
+    setResultadosCliente([]);
   };
 
   // 🔹 Agregar producto al detalle
@@ -275,6 +300,11 @@ export default function Facturacion() {
             timeStyle: "short",
           })
         : new Date().toLocaleString("es-CO");
+      const documentoCliente = factura.DocumentoCliente || "";
+      const nombreCliente = factura.NombreCliente || "";
+      const direccionCliente = factura.DireccionCliente || "";
+      const ciudadCliente = factura.CiudadCliente || "";
+      const telefonoCliente = factura.TelefonoCliente || "";
 
       const filasDetalle = detalleFactura
         .map(
@@ -363,6 +393,14 @@ export default function Facturacion() {
               .value {
                 font-weight: 600;
               }
+              .section-title {
+                margin: 18px 0 10px;
+                font-size: 12px;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: #0f766e;
+              }
               table {
                 width: 100%;
                 border-collapse: collapse;
@@ -418,7 +456,9 @@ export default function Facturacion() {
               <div class="header">
                 <div>
                   <div class="brand">FactuCelest</div>
-                  <div>Sistema de facturación</div>
+                  <div>${escaparHtml(DATOS_EMPRESA.Nombre)}</div>
+                  <div>NIT: ${escaparHtml(DATOS_EMPRESA.Nit)}</div>
+                  <div>${escaparHtml(DATOS_EMPRESA.Ciudad)} · ${escaparHtml(DATOS_EMPRESA.Telefono)}</div>
                 </div>
                 <div class="meta">
                   <div><strong>Factura #${escaparHtml(factura.IdFactura)}</strong></div>
@@ -426,22 +466,51 @@ export default function Facturacion() {
                 </div>
               </div>
 
+              <div class="section-title">Datos de la empresa</div>
               <div class="grid">
                 <div>
-                  <div class="label">Cliente</div>
-                  <div class="value">${escaparHtml(factura.NombreCliente || "")}</div>
+                  <div class="label">Nombre</div>
+                  <div class="value">${escaparHtml(DATOS_EMPRESA.Nombre)}</div>
                 </div>
                 <div>
-                  <div class="label">Documento</div>
-                  <div class="value">${escaparHtml(factura.DocumentoCliente || "")}</div>
+                  <div class="label">NIT</div>
+                  <div class="value">${escaparHtml(DATOS_EMPRESA.Nit)}</div>
                 </div>
                 <div>
-                  <div class="label">Vendedor</div>
-                  <div class="value">${escaparHtml(factura.NombreVendedor || vendedorNombre || "")}</div>
+                  <div class="label">Ciudad</div>
+                  <div class="value">${escaparHtml(DATOS_EMPRESA.Ciudad)}</div>
                 </div>
                 <div>
-                  <div class="label">Método de pago</div>
-                  <div class="value">${escaparHtml(factura.MetodoPago || metodoPago || "")}</div>
+                  <div class="label">Teléfono</div>
+                  <div class="value">${escaparHtml(DATOS_EMPRESA.Telefono)}</div>
+                </div>
+              </div>
+
+              <div class="section-title">Datos del cliente</div>
+              <div class="grid">
+                <div>
+                  <div class="label">Nombre</div>
+                  <div class="value">${escaparHtml(nombreCliente)}</div>
+                </div>
+                <div>
+                  <div class="label">C.C / NIT</div>
+                  <div class="value">${escaparHtml(documentoCliente)}</div>
+                </div>
+                <div>
+                  <div class="label">Dirección</div>
+                  <div class="value">${escaparHtml(direccionCliente || "No registrada")}</div>
+                </div>
+                <div>
+                  <div class="label">Ciudad</div>
+                  <div class="value">${escaparHtml(ciudadCliente || "No registrada")}</div>
+                </div>
+                <div>
+                  <div class="label">Teléfono</div>
+                  <div class="value">${escaparHtml(telefonoCliente || "No registrado")}</div>
+                </div>
+                <div>
+                  <div class="label">Vendedor / Método de pago</div>
+                  <div class="value">${escaparHtml(factura.NombreVendedor || vendedorNombre || "")} · ${escaparHtml(factura.MetodoPago || metodoPago || "")}</div>
                 </div>
               </div>
 
@@ -572,8 +641,9 @@ export default function Facturacion() {
       }
 
       // Reinicia el formulario
-      setCedula("");
+      setNombreClienteBusqueda("");
       setCliente(null);
+      setResultadosCliente([]);
       setVendedorNombre("");
       setVendedorTelefono("");
       setVendedorId(null);
@@ -659,17 +729,34 @@ export default function Facturacion() {
 
       {/* Buscar cliente */}
       <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-3 mb-6">
-        <div className="flex-1 min-w-0 md:min-w-[200px]">
+        <div className="relative flex-1 min-w-0 md:min-w-[200px]">
           <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-200">
-            Cédula del cliente
+            Nombre del cliente
           </label>
           <input
             type="text"
-            placeholder="Cédula del cliente"
-            value={cedula}
-            onChange={(e) => setCedula(e.target.value)}
+            placeholder="Nombre del cliente"
+            value={nombreClienteBusqueda}
+            onChange={(e) => setNombreClienteBusqueda(e.target.value)}
             className="app-input border-gray-300 dark:border-gray-500 shadow-sm"
           />
+
+          {resultadosCliente.length > 0 && (
+            <ul className="absolute bg-white dark:bg-gray-800 border-2 border-cyan-500 dark:border-cyan-400 rounded-2xl mt-2 w-full max-h-60 overflow-y-auto shadow-2xl z-20">
+              {resultadosCliente.map((item, index) => (
+                <li
+                  key={`${item.Documento}-${index}`}
+                  className="px-4 py-3 hover:bg-cyan-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border-b border-gray-100 dark:border-gray-700 last:border-0 text-gray-800 dark:text-gray-200"
+                  onClick={() => seleccionarCliente(item)}
+                >
+                  <span className="font-semibold">{item.Nombre}</span>
+                  <span className="float-right text-cyan-600 dark:text-cyan-400 font-bold">
+                    {item.Documento}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <button
           onClick={handleBuscarCliente}

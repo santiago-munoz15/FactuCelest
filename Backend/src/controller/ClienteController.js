@@ -1,10 +1,23 @@
 import ClienteModel from "../model/ClienteModel.js";
 
 const ClienteController = {
-  // 🔹 Buscar cliente por documento
+  // 🔹 Buscar cliente por documento o nombre
   buscarCliente: async (req, res) => {
     try {
       const { documento } = req.params;
+      const { nombre } = req.query;
+
+      if (nombre && nombre.trim()) {
+        const clientes = await ClienteModel.buscarPorNombre(nombre);
+
+        if (!clientes || clientes.length === 0) {
+          return res
+            .status(404)
+            .json({ success: false, message: "⚠️ Cliente no encontrado" });
+        }
+
+        return res.status(200).json({ success: true, data: clientes });
+      }
 
       const cliente = await ClienteModel.buscarPorDocumento(documento);
 
