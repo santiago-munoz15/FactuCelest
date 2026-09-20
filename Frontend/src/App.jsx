@@ -6,6 +6,7 @@ import Productos from "./pages/Productos";
 import Login from "./pages/Login";
 import Facturacion from "./pages/Facturacion";
 import Clientes from "./pages/Clientes";
+import Proveedores from "./pages/Proveedores";
 import Pagos from "./pages/Pagos";
 import Reportes from "./pages/Reportes";
 
@@ -50,6 +51,15 @@ function App() {
             element={
               <MainLayout>
                 <Clientes />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/proveedores"
+            element={
+              <MainLayout>
+                <Proveedores />
               </MainLayout>
             }
           />

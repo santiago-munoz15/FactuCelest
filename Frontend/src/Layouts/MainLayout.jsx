@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { showConfirmAlert, showSuccessAlert } from "../utils/sweetAlertHelper";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
@@ -9,6 +9,10 @@ const MainLayout = ({ children }) => {
   const sidebarOpen = true;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
+
+  if (!localStorage.getItem("usuario")) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleLogout = async () => {
     const result = await showConfirmAlert(

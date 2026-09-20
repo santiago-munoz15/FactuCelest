@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import {
   showErrorAlert,
@@ -95,6 +95,7 @@ function Reportes() {
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
   const [showEditor, setShowEditor] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [editorFacturaId, setEditorFacturaId] = useState(null);
   const [editorForm, setEditorForm] = useState({
     DocumentoCliente: "",
@@ -103,7 +104,7 @@ function Reportes() {
   });
   const vendedor = useMemo(() => getUsuarioLocal(), []);
 
-  const cargarProductos = async () => {
+  const cargarProductos = useCallback(async () => {
     try {
       const res = await axios.get(buildApiUrl("/api/productos/listarp"));
       if (Array.isArray(res.data)) {
@@ -112,9 +113,9 @@ function Reportes() {
     } catch (error) {
       console.error("Error al cargar productos:", error);
     }
-  };
+  }, []);
 
-  const cargarFacturas = async () => {
+  const cargarFacturas = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -163,7 +164,7 @@ function Reportes() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [busqueda, desde, hasta, periodo]);
 
   const cargarDetalleFactura = async (idFactura, mostrarError = true) => {
     if (!idFactura) {
@@ -190,10 +191,17 @@ function Reportes() {
     }
   };
 
+  const verFactura = async (factura) => {
+    setFacturaSeleccionada(factura);
+    setFacturaDetalle(null);
+    setShowInvoiceModal(true);
+    await cargarDetalleFactura(factura.IdFactura);
+  };
+
   useEffect(() => {
     cargarProductos();
     cargarFacturas();
-  }, []);
+  }, [cargarFacturas, cargarProductos]);
 
   const handleBuscar = async () => {
     await cargarFacturas();
@@ -817,7 +825,7 @@ function Reportes() {
                   Facturas consultadas
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Selecciona una fila para ver el detalle completo.
+                  Usa la acción “Ver factura” para consultar el detalle completo.
                 </p>
               </div>
               <span className="text-sm text-cyan-600 dark:text-cyan-400 font-semibold">
@@ -854,17 +862,10 @@ function Reportes() {
                     </tr>
                   ) : (
                     facturas.map((factura) => {
-                      const activo = facturaSeleccionada?.IdFactura === factura.IdFactura;
-
                       return (
                         <tr
                           key={factura.IdFactura}
-                          onClick={() => cargarDetalleFactura(factura.IdFactura)}
-                          className={`cursor-pointer border-t border-gray-100 dark:border-gray-800 transition-colors ${
-                            activo
-                              ? "bg-cyan-50 dark:bg-cyan-950/30"
-                              : "hover:bg-gray-50 dark:hover:bg-gray-800/70"
-                          }`}
+                          className="border-t border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/70"
                         >
                           <td className="px-4 py-3 font-semibold text-gray-800 dark:text-gray-100">#{factura.IdFactura}</td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{factura.NombreCliente}</td>
@@ -877,6 +878,15 @@ function Reportes() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex justify-end gap-2">
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  verFactura(factura);
+                                }}
+                                className="rounded-xl border border-emerald-200 px-3 py-2 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+                              >
+                                Ver factura
+                              </button>
                               <button
                                 onClick={(event) => {
                                   event.stopPropagation();
@@ -907,18 +917,37 @@ function Reportes() {
           </div>
         </section>
 
-        <aside className="space-y-6">
-          <div className="rounded-3xl bg-white dark:bg-gray-900 shadow-xl border border-gray-100 dark:border-gray-800 p-5 md:p-6">
+      {showInvoiceModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onMouseDown={() => setShowInvoiceModal(false)}
+        >
+          <div
+            className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl dark:bg-gray-900 md:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="invoice-preview-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                <h2 id="invoice-preview-title" className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                   Vista de factura
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Formato de impresión similar a la guía.
                 </p>
               </div>
-              {loadingDetalle && <span className="text-xs text-cyan-600">Cargando...</span>}
+              <div className="flex items-center gap-3">
+                {loadingDetalle && <span className="text-xs text-cyan-600">Cargando...</span>}
+                <button
+                  type="button"
+                  onClick={() => setShowInvoiceModal(false)}
+                  className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
 
             {!facturaEnVista ? (
@@ -1027,7 +1056,8 @@ function Reportes() {
               </div>
             )}
           </div>
-        </aside>
+        </div>
+      )}
       </div>
 
       {showEditor && (

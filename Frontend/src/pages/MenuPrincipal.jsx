@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../App.css";
 import { buildApiUrl } from "../config/api";
 
 function MenuPrincipal() {
+  const navigate = useNavigate();
   const [facturas, setFacturas] = useState([]);
   const [productos, setProductos] = useState([]);
   const [clientesRegistrados, setClientesRegistrados] = useState(0);
@@ -390,7 +392,11 @@ function MenuPrincipal() {
             <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
               Últimas Facturas
             </h3>
-            <button className="text-cyan-600 dark:text-cyan-400 text-sm font-semibold hover:underline">
+            <button
+              type="button"
+              onClick={() => navigate("/reportes")}
+              className="text-cyan-600 dark:text-cyan-400 text-sm font-semibold hover:underline"
+            >
               Ver todas →
             </button>
           </div>

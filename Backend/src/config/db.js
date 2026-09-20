@@ -41,6 +41,16 @@ const ensureSchema = async (pool) => {
     BEGIN
       ALTER TABLE dbo.Facturas ADD TelefonoVendedor VARCHAR(30) NULL;
     END;
+
+    IF EXISTS (
+      SELECT 1
+      FROM sys.foreign_keys
+      WHERE name = 'FK_InicioSesion_Usuarios'
+        AND parent_object_id = OBJECT_ID('dbo.InicioSesion')
+    )
+    BEGIN
+      ALTER TABLE dbo.InicioSesion DROP CONSTRAINT FK_InicioSesion_Usuarios;
+    END;
   `);
 };
 

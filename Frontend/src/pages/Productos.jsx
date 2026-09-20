@@ -8,10 +8,12 @@ import {
 import { buildApiUrl } from "../config/api";
 
 const Productos = () => {
+  const PRODUCTOS_POR_PAGINA = 10;
   const [productos, setProductos] = useState([]);
   const [productosFiltrados, setProductosFiltrados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
+  const [paginaActual, setPaginaActual] = useState(1);
 
   // Modal de agregar
   const [showModal, setShowModal] = useState(false);
@@ -50,6 +52,7 @@ const Productos = () => {
   // 🔹 Filtrar productos por Referencia o Descripción usando stored procedure
   const handleBusqueda = async (texto) => {
     setBusqueda(texto);
+    setPaginaActual(1);
 
     try {
       const res = await axios.get(
@@ -136,12 +139,27 @@ const Productos = () => {
     try {
       await axios.delete(buildApiUrl(`/api/productos/eliminarp/${id}`));
       setProductos((prev) => prev.filter((p) => p.IdProducto !== id));
+      setProductosFiltrados((prev) => prev.filter((p) => p.IdProducto !== id));
       showSuccessAlert("¡Eliminado!", "Producto eliminado correctamente");
     } catch (error) {
       console.error("Error eliminando producto:", error);
       showErrorAlert("Error", "No se pudo eliminar el producto");
     }
   };
+
+  const totalPaginas = Math.ceil(
+    productosFiltrados.length / PRODUCTOS_POR_PAGINA
+  );
+  const productosVisibles = productosFiltrados.slice(
+    (paginaActual - 1) * PRODUCTOS_POR_PAGINA,
+    paginaActual * PRODUCTOS_POR_PAGINA
+  );
+
+  useEffect(() => {
+    if (totalPaginas > 0 && paginaActual > totalPaginas) {
+      setPaginaActual(totalPaginas);
+    }
+  }, [paginaActual, totalPaginas]);
 
   if (loading)
     return (
@@ -223,7 +241,7 @@ const Productos = () => {
                 </td>
               </tr>
             ) : (
-              productosFiltrados.map((p) => (
+              productosVisibles.map((p) => (
                 <tr
                   key={p.IdProducto}
                   className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
@@ -277,7 +295,7 @@ const Productos = () => {
             <p>No se encontraron productos</p>
           </div>
         ) : (
-          productosFiltrados.map((p) => (
+          productosVisibles.map((p) => (
             <div key={p.IdProducto} className="app-mobile-card space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -331,6 +349,51 @@ const Productos = () => {
         )}
       </div>
 
+      {totalPaginas > 1 && (
+        <nav
+          className="mt-6 flex flex-wrap items-center justify-center gap-2"
+          aria-label="Paginación de productos"
+        >
+          <button
+            type="button"
+            onClick={() => setPaginaActual((pagina) => Math.max(1, pagina - 1))}
+            disabled={paginaActual === 1}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            Anterior
+          </button>
+
+          {Array.from({ length: totalPaginas }, (_, indice) => indice + 1).map(
+            (pagina) => (
+              <button
+                type="button"
+                key={pagina}
+                onClick={() => setPaginaActual(pagina)}
+                aria-current={paginaActual === pagina ? "page" : undefined}
+                className={`min-w-10 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                  paginaActual === pagina
+                    ? "bg-cyan-600 text-white"
+                    : "border border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                }`}
+              >
+                {pagina}
+              </button>
+            )
+          )}
+
+          <button
+            type="button"
+            onClick={() =>
+              setPaginaActual((pagina) => Math.min(totalPaginas, pagina + 1))
+            }
+            disabled={paginaActual === totalPaginas}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            Siguiente
+          </button>
+        </nav>
+      )}
+
       {/* 🔹 Modal para agregar producto */}
       {showModal && (
         <div
@@ -340,7 +403,7 @@ const Productos = () => {
             backdropFilter: "blur(8px)",
           }}
         >
-          <div className="bg-white dark:bg-gray-800 p-5 md:p-8 rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl transform animate-slideIn">
+          <div className="product-modal-scrollbar bg-white dark:bg-gray-800 p-5 md:p-8 rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl transform animate-slideIn">
             <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-gray-100">
               ➕ Nuevo Producto
             </h2>

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../context/useTheme";
 import "../App.css";
 
 const menuGroups = [
-  [{ to: "/menu", label: "MenuPrincipal", icon: "⌂" }, { to: "/clientes", label: "Clientes", icon: "♙" }],
+  [{ to: "/menu", label: "MenuPrincipal", icon: "⌂" }, { to: "/clientes", label: "Clientes", icon: "♙" }, { to: "/proveedores", label: "Proveedores", icon: "♜" }],
   [{ to: "/facturacion", label: "Facturación", icon: "▣" }, { to: "/productos", label: "Productos", icon: "▤" }, { to: "/pagos", label: "Pagos", icon: "$" }, { to: "/reportes", label: "Reportes", icon: "⌁" }],
 ];
 

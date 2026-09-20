@@ -6,6 +6,10 @@
 .app-sidebar::-webkit-scrollbar { width: 8px; }
 .app-sidebar::-webkit-scrollbar-track { background: transparent; }
 .app-sidebar::-webkit-scrollbar-thumb { background: transparent; }
+.product-modal-scrollbar { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+.product-modal-scrollbar::-webkit-scrollbar { width: 8px; }
+.product-modal-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.product-modal-scrollbar::-webkit-scrollbar-thumb { background: transparent; }
 .app-layout-content { width: 100%; margin-left: 0; }
 .sidebar-is-expanded { width: calc(100% - 316px); margin-left: 316px; }
 .sidebar-is-collapsed { width: calc(100% - 116px); margin-left: 116px; }
