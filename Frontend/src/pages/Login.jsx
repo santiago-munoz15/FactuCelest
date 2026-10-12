@@ -57,7 +57,10 @@ export default function Login() {
     try {
       const res = await axios.post(buildApiUrl("/api/usuarios/registrar"), registro);
       setVerificando(true);
-      showInfoAlert("Registro", res.data?.message || "Usuario registrado");
+      const mensaje = res.data?.codigoVerificacion
+        ? `${res.data.message} Código: ${res.data.codigoVerificacion}`
+        : res.data?.message || "Usuario registrado";
+      showInfoAlert("Registro", mensaje);
     } catch (error) {
       const message =
         error?.response?.data?.message || "No se pudo registrar el usuario";

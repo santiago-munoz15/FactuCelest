@@ -129,7 +129,7 @@ export default function Facturacion() {
     if (!nombre || !telefono) {
       showErrorAlert(
         "Campos incompletos",
-        "Debes ingresar el nombre y el telÃ©fono del vendedor"
+        "Debes ingresar el nombre y el teléfono del vendedor"
       );
       return;
     }
@@ -173,7 +173,7 @@ export default function Facturacion() {
         setNuevoVendedor({ Nombre: "", Telefono: "" });
         await showSuccessAlert(
           "Vendedor agregado",
-          `${vendedorCreado.Nombre} quedÃ³ disponible para facturar`
+          `${vendedorCreado.Nombre} quedó disponible para facturar`
         );
       } else {
         showErrorAlert("Error", res.data.error || "No se pudo registrar el vendedor");
@@ -209,7 +209,7 @@ export default function Facturacion() {
     } catch (error) {
       console.error("Error buscando cliente:", error);
       if (error.response?.status !== 404) {
-        showErrorAlert("Error", "Cliente no encontrado o error de conexiÃ³n");
+        showErrorAlert("Error", "Cliente no encontrado o error de conexión");
       }
       setCliente(null);
       setResultadosCliente([]);
@@ -229,7 +229,7 @@ export default function Facturacion() {
 
     const existe = detalle.find((d) => d.IdProducto === prod.IdProducto);
     if (existe) {
-      showInfoAlert("Producto duplicado", "Este producto ya estÃ¡ agregado");
+      showInfoAlert("Producto duplicado", "Este producto ya está agregado");
       return;
     }
 
@@ -347,7 +347,7 @@ export default function Facturacion() {
 
       if (!documento) {
         iframe.remove();
-        showErrorAlert("Error", "No fue posible abrir la ventana de impresiÃ³n");
+      showErrorAlert("Error", "No fue posible abrir la ventana de impresión");
         return false;
       }
 
@@ -471,7 +471,7 @@ export default function Facturacion() {
                   <div class="brand">FactuCelest</div>
                   <div>${escaparHtml(DATOS_EMPRESA.Nombre)}</div>
                   <div>NIT: ${escaparHtml(DATOS_EMPRESA.Nit)}</div>
-                  <div>${escaparHtml(DATOS_EMPRESA.Ciudad)} Â· ${escaparHtml(DATOS_EMPRESA.Telefono)}</div>
+                  <div>${escaparHtml(DATOS_EMPRESA.Ciudad)} · ${escaparHtml(DATOS_EMPRESA.Telefono)}</div>
                 </div>
                 <div class="meta">
                   <div><strong>Factura #${escaparHtml(factura.IdFactura)}</strong></div>
@@ -491,7 +491,7 @@ export default function Facturacion() {
                   <div class="value">${escaparHtml(documentoCliente)}</div>
                 </div>
                 <div>
-                  <div class="label">DirecciÃ³n</div>
+                  <div class="label">Dirección</div>
                   <div class="value">${escaparHtml(direccionCliente || "No registrada")}</div>
                 </div>
                 <div>
@@ -499,12 +499,12 @@ export default function Facturacion() {
                   <div class="value">${escaparHtml(ciudadCliente || "No registrada")}</div>
                 </div>
                 <div>
-                  <div class="label">TelÃ©fono</div>
+                  <div class="label">Teléfono</div>
                   <div class="value">${escaparHtml(telefonoCliente || "No registrado")}</div>
                 </div>
                 <div>
-                  <div class="label">Vendedor / MÃ©todo de pago</div>
-                  <div class="value">${escaparHtml(factura.NombreVendedor || vendedorNombre || "")} Â· ${escaparHtml(factura.MetodoPago || metodoPago || "")}</div>
+                  <div class="label">Vendedor / Método de pago</div>
+                  <div class="value">${escaparHtml(factura.NombreVendedor || vendedorNombre || "")} · ${escaparHtml(factura.MetodoPago || metodoPago || "")}</div>
                 </div>
               </div>
 
@@ -552,7 +552,7 @@ export default function Facturacion() {
       return true;
     } catch (error) {
       console.error("Error imprimiendo factura:", error);
-      showErrorAlert("Error", "No se pudo preparar la impresiÃ³n de la factura");
+      showErrorAlert("Error", "No se pudo preparar la impresión de la factura");
       return false;
     }
   };
@@ -581,7 +581,7 @@ export default function Facturacion() {
 
       if (res.data.success) {
         await showSuccessAlert(
-          "Â¡Factura creada!",
+          "¡Factura creada!",
           `Factura #${res.data.IdFactura} registrada correctamente`
         );
         return { success: true, IdFactura: res.data.IdFactura };
@@ -630,7 +630,7 @@ export default function Facturacion() {
     if (guardada?.success) {
       const decision = await showConfirmAlert(
         "Factura generada",
-        "Â¿Deseas imprimir la factura reciÃ©n creada?"
+        "¿Deseas imprimir la factura recién creada?"
       );
 
       if (decision.isConfirmed) {

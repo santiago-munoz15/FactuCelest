@@ -4,12 +4,14 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const dbSettings = {
-  user: process.env.USER,
-  password: process.env.PASSWORD,
-  server: process.env.SERVER,
-  database: process.env.DATABASE,
+  user: process.env.DB_USER || process.env.SQL_USER || process.env.USER,
+  password: process.env.DB_PASSWORD || process.env.SQL_PASSWORD || process.env.PASSWORD,
+  server: process.env.DB_SERVER || process.env.SQL_SERVER || process.env.SERVER,
+  database: process.env.DB_NAME || process.env.SQL_DATABASE || process.env.DATABASE,
+  port: Number(process.env.DB_PORT || process.env.SQL_PORT || 1433),
   options: {
-    trustServerCertificate: true, // Evita errores de SSL en entornos locales
+    encrypt: true,
+    trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === "true" || process.env.NODE_ENV !== "production",
   },
 };
 
@@ -18,9 +20,7 @@ let schemaReadyPromise = null;
 const ensureSchema = async (pool) => {
   await pool.request().query(`
     IF COL_LENGTH('dbo.Clientes', 'Ciudad') IS NULL
-    BEGIN
       ALTER TABLE dbo.Clientes ADD Ciudad VARCHAR(100) NULL;
-    END;
 
     IF OBJECT_ID('dbo.Vendedores', 'U') IS NULL
     BEGIN
@@ -33,51 +33,36 @@ const ensureSchema = async (pool) => {
     END;
 
     IF COL_LENGTH('dbo.Facturas', 'NombreVendedor') IS NULL
-    BEGIN
       ALTER TABLE dbo.Facturas ADD NombreVendedor VARCHAR(150) NULL;
-    END;
 
     IF COL_LENGTH('dbo.Facturas', 'TelefonoVendedor') IS NULL
-    BEGIN
       ALTER TABLE dbo.Facturas ADD TelefonoVendedor VARCHAR(30) NULL;
-    END;
 
     IF COL_LENGTH('dbo.Facturas', 'Observaciones') IS NULL
-    BEGIN
       ALTER TABLE dbo.Facturas ADD Observaciones VARCHAR(500) NULL;
-    END;
-
-    IF EXISTS (
-      SELECT 1
-      FROM sys.foreign_keys
-      WHERE name = 'FK_InicioSesion_Usuarios'
-        AND parent_object_id = OBJECT_ID('dbo.InicioSesion')
-    )
-    BEGIN
-      ALTER TABLE dbo.InicioSesion DROP CONSTRAINT FK_InicioSesion_Usuarios;
-    END;
   `);
 };
 
-// Función para obtener la conexión (pool)
 export const getConnection = async () => {
   try {
-    const pool = await sql.connect(dbSettings);
-    console.log("✅ Conectado correctamente a la base de datos");
-    return pool;
-  } catch (err) {
-    console.error("❌ Error de conexión a la BD:", err);
-    throw err;
+    return await sql.connect(dbSettings);
+  } catch (error) {
+    console.error("Error de conexión a la base de datos:", error);
+    throw error;
   }
 };
 
 export const ensureDatabaseSchema = async () => {
   if (!schemaReadyPromise) {
-    schemaReadyPromise = getConnection().then((pool) => ensureSchema(pool));
+    schemaReadyPromise = getConnection()
+      .then(ensureSchema)
+      .catch((error) => {
+        schemaReadyPromise = null;
+        throw error;
+      });
   }
 
   return schemaReadyPromise;
 };
 
-// Exporta también sql para usar los tipos (VarChar, Int, etc.)
 export { sql };

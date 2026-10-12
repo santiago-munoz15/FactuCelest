@@ -29,7 +29,7 @@ export const Login = async (req, res) => {
         .json({ message: "❌ Usuario o contraseña incorrectos." });
     }
 
-    if (usuario.Verificado === 0) {
+    if (!usuario.Verificado) {
       return res.status(403).json({
         message: "⚠️ Cuenta no verificada. Por favor verifica tu correo.",
       });
@@ -50,13 +50,21 @@ export const Registrar = async (req, res) => {
   try {
     const { nombre, email, password } = req.body;
 
+    if (!String(nombre || "").trim() || !String(email || "").trim() || !password) {
+      return res.status(400).json({ message: "Nombre, correo y contraseña son obligatorios." });
+    }
+
+    if (process.env.NODE_ENV !== "development" && !sendgridConfigurado) {
+      return res.status(503).json({ message: "El registro por correo no está disponible en este momento." });
+    }
+
     // Generar un código de verificación aleatorio de 6 dígitos
     const codigoVerificacion = Math.floor(
       100000 + Math.random() * 900000
     ).toString();
 
     const pool = await getConnection();
-    await pool
+    const resultadoRegistro = await pool
       .request()
       .input("Nombre", sql.VarChar(100), nombre)
       .input("Email", sql.VarChar(100), email)
@@ -64,10 +72,15 @@ export const Registrar = async (req, res) => {
       .input("Codigo", sql.VarChar(10), codigoVerificacion) // ✅ importante
       .execute("spRegistrarUsuario");
 
+    if (resultadoRegistro.recordset[0]?.Resultado === "EXISTE") {
+      return res.status(409).json({ message: "Ya existe una cuenta con ese correo." });
+    }
+
     if (!sendgridConfigurado) {
       return res.status(201).json({
         message:
-          "✅ Usuario registrado correctamente. SendGrid no está configurado en este entorno.",
+          "Usuario registrado. Usa este código para verificar tu cuenta.",
+        codigoVerificacion,
       });
     }
 
@@ -118,7 +131,7 @@ export const Verificar = async (req, res) => {
 
     const usuario = result.recordset[0];
 
-    if (!usuario) {
+    if (!usuario || usuario.Resultado !== "OK") {
       return res
         .status(400)
         .json({ message: "❌ Código inválido o usuario no encontrado." });
