@@ -46,8 +46,16 @@ export default function Login() {
         await showSuccessAlert("¡Bienvenido!", "Inicio de sesión exitoso");
         navigate("/menu");
       }
-    } catch {
-      showErrorAlert("Error de acceso", "Email o contraseña incorrectos");
+    } catch (error) {
+      const status = error.response?.status;
+      const mensaje = status === 401
+        ? "El correo o la contraseña no coinciden con la cuenta registrada."
+        : status === 403
+          ? error.response?.data?.message || "La cuenta aún no está verificada."
+          : status
+            ? error.response?.data?.message || "El servidor no pudo completar el inicio de sesión."
+            : "No se pudo conectar con el servidor. Revisa la conexión e inténtalo de nuevo.";
+      showErrorAlert("No se pudo iniciar sesión", mensaje);
     }
   };
 
