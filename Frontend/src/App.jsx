@@ -9,6 +9,7 @@ import Clientes from "./pages/Clientes";
 import Proveedores from "./pages/Proveedores";
 import Pagos from "./pages/Pagos";
 import Reportes from "./pages/Reportes";
+import Comisiones from "./pages/Comisiones";
 
 function App() {
   return (
@@ -78,6 +79,15 @@ function App() {
             element={
               <MainLayout>
                 <Reportes />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/comisiones"
+            element={
+              <MainLayout>
+                <Comisiones />
               </MainLayout>
             }
           />

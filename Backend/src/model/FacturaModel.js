@@ -36,20 +36,19 @@ const obtenerSiguienteIdDetalle = async (transaction) => {
   return Number(result.recordset[0]?.MaxId ?? 0) + 1;
 };
 
-const construirFiltroFacturas = ({ periodo, desde, hasta, busqueda }) => {
+const construirFiltroFacturas = ({ periodo, desde, hasta, busqueda, vendedor }) => {
   const condiciones = [];
   const params = {};
 
   if (periodo === "dia") {
-    condiciones.push("CAST(f.Fecha AS date) = CAST(GETDATE() AS date)");
+    condiciones.push("f.Fecha >= CAST(GETDATE() AS date) AND f.Fecha < DATEADD(day, 1, CAST(GETDATE() AS date))");
   } else if (periodo === "mes") {
-    condiciones.push("YEAR(f.Fecha) = YEAR(GETDATE())");
-    condiciones.push("MONTH(f.Fecha) = MONTH(GETDATE())");
+    condiciones.push("f.Fecha >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1) AND f.Fecha < DATEADD(month, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))");
   } else if (periodo === "rango" && desde && hasta) {
-    params.desde = new Date(`${desde}T00:00:00`);
-    params.hasta = new Date(`${hasta}T23:59:59.999`);
+    params.desde = desde;
+    params.hasta = hasta;
     condiciones.push("f.Fecha >= @Desde");
-    condiciones.push("f.Fecha <= @Hasta");
+    condiciones.push("f.Fecha < DATEADD(day, 1, @Hasta)");
   }
 
   if (busqueda) {
@@ -57,6 +56,11 @@ const construirFiltroFacturas = ({ periodo, desde, hasta, busqueda }) => {
     condiciones.push(
       "(CONVERT(VARCHAR(30), f.IdFactura) LIKE '%' + @Busqueda + '%' OR CONVERT(VARCHAR(30), c.Documento) LIKE '%' + @Busqueda + '%' OR c.Nombre LIKE '%' + @Busqueda + '%')"
     );
+  }
+
+  if (vendedor) {
+    params.vendedor = vendedor;
+    condiciones.push("f.NombreVendedor = @Vendedor");
   }
 
   return { condiciones, params };
@@ -210,7 +214,7 @@ const FacturaModel = {
     }
   },
 
-  obtenerFacturasReporte: async ({ periodo = "todos", desde = null, hasta = null, busqueda = "" } = {}) => {
+  obtenerFacturasReporte: async ({ periodo = "todos", desde = null, hasta = null, busqueda = "", vendedor = "" } = {}) => {
     try {
       const pool = await getConnection();
       const { condiciones, params } = construirFiltroFacturas({
@@ -218,59 +222,61 @@ const FacturaModel = {
         desde,
         hasta,
         busqueda: busqueda?.trim(),
+        vendedor: vendedor?.trim(),
       });
 
       const request = pool.request();
 
       if (params.desde) {
-        request.input("Desde", sql.DateTime, params.desde);
+        request.input("Desde", sql.Date, params.desde);
       }
 
       if (params.hasta) {
-        request.input("Hasta", sql.DateTime, params.hasta);
+        request.input("Hasta", sql.Date, params.hasta);
       }
 
       if (params.busqueda) {
         request.input("Busqueda", sql.VarChar(100), params.busqueda);
       }
 
+      if (params.vendedor) {
+        request.input("Vendedor", sql.VarChar(150), params.vendedor);
+      }
+
       const query = `
-        SELECT
-          f.IdFactura,
-          f.Fecha,
-          f.Subtotal,
-          f.Impuesto,
-          f.Total,
-          f.MetodoPago,
-          f.NombreVendedor,
-          f.TelefonoVendedor,
-          f.Observaciones,
-          c.Documento AS DocumentoCliente,
-          c.Nombre AS NombreCliente,
-          c.Telefono AS TelefonoCliente,
-          c.Correo AS CorreoCliente,
-          c.Direccion AS DireccionCliente,
-          COALESCE(SUM(df.Cantidad), 0) AS CantidadProductos,
-          COALESCE(SUM(df.Subtotal), 0) AS TotalDetalle
-        FROM Facturas f
-        INNER JOIN Clientes c ON f.IdClienteFK = c.Documento
-        LEFT JOIN DetalleFactura df ON df.IdFacturaFK = f.IdFactura
+        WITH ResumenDetalle AS (
+          SELECT IdFacturaFK, SUM(Cantidad) AS CantidadProductos, SUM(Subtotal) AS TotalDetalle
+          FROM dbo.DetalleFactura GROUP BY IdFacturaFK
+        ), ResumenPagos AS (
+          SELECT IdFacturaFK, SUM(Monto) AS MontoPagado,
+            SUM(CASE WHEN MetodoPago = 'Efectivo' THEN Monto ELSE 0 END) AS MontoEfectivo,
+            SUM(CASE WHEN MetodoPago = 'Transferencia' THEN Monto ELSE 0 END) AS MontoTransferencia,
+            SUM(CASE WHEN MetodoPago = 'Tarjeta' THEN Monto ELSE 0 END) AS MontoTarjeta,
+            SUM(CASE WHEN MetodoPago = 'Nequi' THEN Monto ELSE 0 END) AS MontoNequi,
+            SUM(CASE WHEN MetodoPago = 'Daviplata' THEN Monto ELSE 0 END) AS MontoDaviplata
+          FROM dbo.Pagos GROUP BY IdFacturaFK
+        )
+        SELECT f.IdFactura, f.Fecha,
+          COALESCE(f.FechaVencimiento, DATEADD(day, 30, CAST(f.Fecha AS date))) AS FechaVencimiento,
+          f.Subtotal, f.Impuesto, f.Total, f.MetodoPago, f.NombreVendedor, f.TelefonoVendedor, f.Observaciones,
+          c.Documento AS DocumentoCliente, c.Nombre AS NombreCliente, c.Telefono AS TelefonoCliente,
+          c.Correo AS CorreoCliente, c.Direccion AS DireccionCliente,
+          COALESCE(d.CantidadProductos, 0) AS CantidadProductos, COALESCE(d.TotalDetalle, 0) AS TotalDetalle,
+          COALESCE(p.MontoPagado, 0) AS MontoPagado,
+          CASE WHEN f.Total - COALESCE(p.MontoPagado, 0) < 0 THEN 0 ELSE f.Total - COALESCE(p.MontoPagado, 0) END AS Saldo,
+          COALESCE(p.MontoEfectivo, 0) AS MontoEfectivo,
+          COALESCE(p.MontoTransferencia, 0) AS MontoTransferencia,
+          COALESCE(p.MontoTarjeta, 0) AS MontoTarjeta,
+          COALESCE(p.MontoNequi, 0) AS MontoNequi,
+          COALESCE(p.MontoDaviplata, 0) AS MontoDaviplata,
+          CASE WHEN f.Total - COALESCE(p.MontoPagado, 0) <= 0 THEN 'Pagada'
+            WHEN COALESCE(f.FechaVencimiento, DATEADD(day, 30, CAST(f.Fecha AS date))) < CAST(GETDATE() AS date) THEN 'Vencida'
+            WHEN COALESCE(p.MontoPagado, 0) > 0 THEN 'Abonada' ELSE 'Pendiente' END AS Estado
+        FROM dbo.Facturas f
+        INNER JOIN dbo.Clientes c ON f.IdClienteFK = c.Documento
+        LEFT JOIN ResumenDetalle d ON d.IdFacturaFK = f.IdFactura
+        LEFT JOIN ResumenPagos p ON p.IdFacturaFK = f.IdFactura
         ${condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : ""}
-        GROUP BY
-          f.IdFactura,
-          f.Fecha,
-          f.Subtotal,
-          f.Impuesto,
-          f.Total,
-          f.MetodoPago,
-          f.NombreVendedor,
-          f.TelefonoVendedor,
-          f.Observaciones,
-          c.Documento,
-          c.Nombre,
-          c.Telefono,
-          c.Correo,
-          c.Direccion
         ORDER BY f.Fecha DESC, f.IdFactura DESC;
       `;
 
@@ -292,6 +298,7 @@ const FacturaModel = {
           SELECT
             f.IdFactura,
             f.Fecha,
+            COALESCE(f.FechaVencimiento, DATEADD(day, 30, CAST(f.Fecha AS date))) AS FechaVencimiento,
             f.Subtotal,
             f.Impuesto,
             f.Total,
@@ -299,6 +306,11 @@ const FacturaModel = {
             f.NombreVendedor,
             f.TelefonoVendedor,
             f.Observaciones,
+            COALESCE(pagos.MontoPagado, 0) AS MontoPagado,
+            CASE WHEN f.Total - COALESCE(pagos.MontoPagado, 0) < 0 THEN 0 ELSE f.Total - COALESCE(pagos.MontoPagado, 0) END AS Saldo,
+            CASE WHEN f.Total - COALESCE(pagos.MontoPagado, 0) <= 0 THEN 'Pagada'
+              WHEN COALESCE(f.FechaVencimiento, DATEADD(day, 30, CAST(f.Fecha AS date))) < CAST(GETDATE() AS date) THEN 'Vencida'
+              WHEN COALESCE(pagos.MontoPagado, 0) > 0 THEN 'Abonada' ELSE 'Pendiente' END AS Estado,
             c.Documento AS DocumentoCliente,
             c.Nombre AS NombreCliente,
             c.Ciudad AS CiudadCliente,
@@ -307,6 +319,11 @@ const FacturaModel = {
             c.Direccion AS DireccionCliente
           FROM Facturas f
           INNER JOIN Clientes c ON f.IdClienteFK = c.Documento
+          OUTER APPLY (
+            SELECT SUM(p.Monto) AS MontoPagado
+            FROM dbo.Pagos p
+            WHERE p.IdFacturaFK = f.IdFactura
+          ) pagos
           WHERE f.IdFactura = @IdFactura;
 
           SELECT
@@ -322,16 +339,22 @@ const FacturaModel = {
           LEFT JOIN Productos p ON p.IdProducto = df.IdProductoFK
           WHERE df.IdFacturaFK = @IdFactura
           ORDER BY df.IdDetalleFactura;
+
+          SELECT IdPago, FechaPago, Monto, MetodoPago, Pagador, Observaciones
+          FROM dbo.Pagos
+          WHERE IdFacturaFK = @IdFactura
+          ORDER BY FechaPago, IdPago;
         `);
 
       const factura = result.recordsets[0]?.[0] ?? null;
       const detalle = result.recordsets[1] ?? [];
+      const pagos = result.recordsets[2] ?? [];
 
       if (!factura) {
         return { success: false, error: "Factura no encontrada" };
       }
 
-      return { success: true, factura: { ...factura, Detalle: detalle } };
+      return { success: true, factura: { ...factura, Detalle: detalle, Pagos: pagos } };
     } catch (error) {
       console.error("❌ Error al obtener factura por ID:", error);
       return { success: false, error: error.message };

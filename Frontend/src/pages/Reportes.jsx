@@ -34,7 +34,11 @@ const escaparHtml = (texto = "") =>
     .replace(/'/g, "&#39;");
 
 const formatDate = (value) => {
-  const date = new Date(value);
+  const dateOnly = typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const date = dateOnly
+    ? (() => { const [year, month, day] = value.split("-").map(Number); return new Date(year, month - 1, day); })()
+    : new Date(value);
+  const sqlDate = value instanceof Date && value.getUTCHours() === 0 && value.getUTCMinutes() === 0 && value.getUTCSeconds() === 0;
 
   if (Number.isNaN(date.getTime())) {
     return "";
@@ -44,6 +48,7 @@ const formatDate = (value) => {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    ...(sqlDate ? { timeZone: "UTC" } : {}),
   });
 };
 
@@ -95,10 +100,12 @@ function Reportes() {
   const [filtroVendedor, setFiltroVendedor] = useState("");
   const [filtroCliente, setFiltroCliente] = useState("");
   const [filtroMetodoPago, setFiltroMetodoPago] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
   const [periodo, setPeriodo] = useState("mes");
   const [busqueda, setBusqueda] = useState("");
+  const [filtrosAplicados, setFiltrosAplicados] = useState({ periodo: "mes", desde: "", hasta: "", busqueda: "" });
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
   const [showEditor, setShowEditor] = useState(false);
@@ -124,22 +131,23 @@ function Reportes() {
   }, []);
 
   const cargarFacturas = useCallback(async () => {
-    if (periodo === "rango" && (!desde || !hasta || desde > hasta)) return;
+    const { periodo: periodoConsulta, desde: desdeConsulta, hasta: hastaConsulta, busqueda: busquedaConsulta } = filtrosAplicados;
+    if (periodoConsulta === "rango" && (!desdeConsulta || !hastaConsulta || desdeConsulta > hastaConsulta)) return;
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set("periodo", periodo);
+      params.set("periodo", periodoConsulta);
 
-      if (busqueda.trim()) {
-        params.set("busqueda", busqueda.trim());
+      if (busquedaConsulta.trim()) {
+        params.set("busqueda", busquedaConsulta.trim());
       }
 
-      if (periodo === "rango") {
-        if (desde) {
-          params.set("desde", desde);
+      if (periodoConsulta === "rango") {
+        if (desdeConsulta) {
+          params.set("desde", desdeConsulta);
         }
-        if (hasta) {
-          params.set("hasta", hasta);
+        if (hastaConsulta) {
+          params.set("hasta", hastaConsulta);
         }
       }
 
@@ -149,15 +157,6 @@ function Reportes() {
 
       if (res.data.success) {
         setFacturas(res.data.facturas || []);
-
-        if (res.data.facturas?.length > 0) {
-          const primera = res.data.facturas[0];
-          setFacturaSeleccionada(primera);
-          await cargarDetalleFactura(primera.IdFactura, false);
-        } else {
-          setFacturaSeleccionada(null);
-          setFacturaDetalle(null);
-        }
       } else {
         showErrorAlert(
           "Error",
@@ -173,7 +172,7 @@ function Reportes() {
     } finally {
       setLoading(false);
     }
-  }, [busqueda, desde, hasta, periodo]);
+  }, [filtrosAplicados]);
 
   const cargarDetalleFactura = async (idFactura, mostrarError = true) => {
     if (!idFactura) {
@@ -237,7 +236,7 @@ function Reportes() {
       showInfoAlert("Rango de fechas incompleto", "Selecciona un rango válido para generar el reporte.");
       return;
     }
-    await cargarFacturas();
+    setFiltrosAplicados({ periodo, desde, hasta, busqueda });
   };
 
   const abrirEditor = async (factura) => {
@@ -469,6 +468,15 @@ function Reportes() {
         `
       )
       .join("");
+    const filasAbonos = (factura.Pagos || []).map((pago) => `
+      <tr>
+        <td>${escaparHtml(formatDate(pago.FechaPago))}</td>
+        <td>${escaparHtml(pago.MetodoPago || "")}</td>
+        <td>${escaparHtml(pago.Pagador || "—")}</td>
+        <td style="text-align:right;">${formatCurrency(pago.Monto || 0)}</td>
+        <td>${escaparHtml(pago.Observaciones || "")}</td>
+      </tr>
+    `).join("");
 
     const iframe = document.createElement("iframe");
     iframe.style.position = "fixed";
@@ -679,11 +687,20 @@ function Reportes() {
               </tbody>
             </table>
 
+            <div class="section-title">Historial de abonos</div>
+            <table>
+              <thead><tr><th>Fecha</th><th>Método</th><th>Pagador</th><th style="text-align:right;">Monto</th><th>Observaciones</th></tr></thead>
+              <tbody>${filasAbonos || '<tr><td colspan="5">Sin abonos registrados.</td></tr>'}</tbody>
+            </table>
+
             <div class="totals">
               <div class="totals-box">
                 <div class="totals-row"><span>Subtotal</span><span>${formatCurrency(factura.Subtotal || 0)}</span></div>
                 <div class="totals-row"><span>IVA</span><span>${formatCurrency(factura.Impuesto ?? factura.Iva ?? 0)}</span></div>
-                <div class="totals-row total"><span>Total</span><span>${formatCurrency(factura.Total || 0)}</span></div>
+                <div class="totals-row"><span>Abonado</span><span>${formatCurrency(factura.MontoPagado || 0)}</span></div>
+                <div class="totals-row"><span>Saldo pendiente (${escaparHtml(factura.Estado || "Pendiente")})</span><span>${formatCurrency(factura.Saldo ?? factura.Total ?? 0)}</span></div>
+                <div class="totals-row"><span>Vencimiento</span><span>${escaparHtml(formatDate(factura.FechaVencimiento))}</span></div>
+                <div class="totals-row total"><span>Total factura</span><span>${formatCurrency(factura.Total || 0)}</span></div>
               </div>
             </div>
 
@@ -707,9 +724,12 @@ function Reportes() {
   const facturasFiltradas = useMemo(() => facturas.filter((factura) => {
     const vendedorCoincide = !filtroVendedor || String(factura.NombreVendedor || "") === filtroVendedor;
     const clienteCoincide = !filtroCliente || String(factura.DocumentoCliente || "") === filtroCliente;
-    const metodoCoincide = !filtroMetodoPago || String(factura.MetodoPago || "").toLocaleLowerCase("es") === filtroMetodoPago.toLocaleLowerCase("es");
-    return vendedorCoincide && clienteCoincide && metodoCoincide;
-  }), [facturas, filtroVendedor, filtroCliente, filtroMetodoPago]);
+    const metodoCoincide = !filtroMetodoPago || (filtroMetodoPago === "Crédito pendiente"
+      ? Number(factura.Saldo || 0) > 0
+      : Number(factura[`Monto${filtroMetodoPago}`] || 0) > 0);
+    const estadoCoincide = !filtroEstado || factura.Estado === filtroEstado;
+    return vendedorCoincide && clienteCoincide && metodoCoincide && estadoCoincide;
+  }), [facturas, filtroVendedor, filtroCliente, filtroMetodoPago, filtroEstado]);
 
   const resumenActual = useMemo(() => {
     return facturasFiltradas.reduce(
@@ -732,22 +752,31 @@ function Reportes() {
     facturasHistoricas.forEach((factura) => {
       if (filtroVendedor && String(factura.NombreVendedor || "") !== filtroVendedor) return;
       if (filtroCliente && String(factura.DocumentoCliente || "") !== filtroCliente) return;
-      if (filtroMetodoPago && String(factura.MetodoPago || "").toLocaleLowerCase("es") !== filtroMetodoPago.toLocaleLowerCase("es")) return;
+      if (filtroEstado && factura.Estado !== filtroEstado) return;
+      if (filtroMetodoPago && !(filtroMetodoPago === "Crédito pendiente"
+        ? Number(factura.Saldo || 0) > 0
+        : Number(factura[`Monto${filtroMetodoPago}`] || 0) > 0)) return;
       const date = new Date(factura.Fecha);
       const mes = porMes.get(`${date.getFullYear()}-${date.getMonth()}`);
-      if (mes) mes.total += Number(factura.Total || 0);
+      if (mes) mes.total += filtroMetodoPago
+        ? Number(filtroMetodoPago === "Crédito pendiente" ? factura.Saldo : factura[`Monto${filtroMetodoPago}`] || 0)
+        : Number(factura.Total || 0);
     });
     return meses;
-  }, [facturasHistoricas, filtroVendedor, filtroCliente, filtroMetodoPago]);
+  }, [facturasHistoricas, filtroVendedor, filtroCliente, filtroMetodoPago, filtroEstado]);
 
   const ventasPorMetodo = useMemo(() => {
     const totales = new Map();
     facturasFiltradas.forEach((factura) => {
-      const metodo = factura.MetodoPago || "Sin método";
-      totales.set(metodo, (totales.get(metodo) || 0) + Number(factura.Total || 0));
+      const metodos = filtroMetodoPago
+        ? [[filtroMetodoPago, filtroMetodoPago === "Crédito pendiente" ? Number(factura.Saldo || 0) : Number(factura[`Monto${filtroMetodoPago}`] || 0)]]
+        : [["Efectivo", Number(factura.MontoEfectivo || 0)], ["Transferencia", Number(factura.MontoTransferencia || 0)], ["Tarjeta", Number(factura.MontoTarjeta || 0)], ["Nequi", Number(factura.MontoNequi || 0)], ["Daviplata", Number(factura.MontoDaviplata || 0)], ["Crédito pendiente", Number(factura.Saldo || 0)]];
+      metodos.forEach(([metodo, valor]) => {
+        if (valor > 0) totales.set(metodo, (totales.get(metodo) || 0) + valor);
+      });
     });
     return [...totales.entries()].map(([metodo, total]) => ({ metodo, total })).sort((a, b) => b.total - a.total);
-  }, [facturasFiltradas]);
+  }, [facturasFiltradas, filtroMetodoPago]);
 
   const productosVendidos = useMemo(() => facturasFiltradas.reduce((sum, item) => sum + Number(item.CantidadProductos || 0), 0), [facturasFiltradas]);
   const clientesAtendidos = useMemo(() => new Set(facturasFiltradas.map((item) => String(item.DocumentoCliente || "")).filter(Boolean)).size, [facturasFiltradas]);
@@ -768,8 +797,8 @@ function Reportes() {
       showInfoAlert("Sin resultados", "Aplica filtros que incluyan facturas para exportar.");
       return;
     }
-    const encabezados = ["Factura", "Cliente", "Documento", "Vendedor", "Fecha", "Método de pago", "Total"];
-    const filas = facturasFiltradas.map((factura) => [factura.IdFactura, factura.NombreCliente, factura.DocumentoCliente, factura.NombreVendedor || "", formatDate(factura.Fecha), factura.MetodoPago, factura.Total]);
+    const encabezados = ["Factura", "Cliente", "Documento", "Vendedor", "Fecha", "Vencimiento", "Estado", "Métodos de pago", "Total facturado", "Abonado", "Saldo pendiente"];
+    const filas = facturasFiltradas.map((factura) => [factura.IdFactura, factura.NombreCliente, factura.DocumentoCliente, factura.NombreVendedor || "", formatDate(factura.Fecha), formatDate(factura.FechaVencimiento), factura.Estado, ["Efectivo", "Transferencia", "Tarjeta", "Nequi", "Daviplata"].filter((metodo) => Number(factura[`Monto${metodo}`] || 0) > 0).join(" + ") || (Number(factura.Saldo || 0) > 0 ? "Crédito pendiente" : "—"), factura.Total, factura.MontoPagado, factura.Saldo]);
     const escaparCsv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
     const contenido = [encabezados, ...filas].map((fila) => fila.map(escaparCsv).join(",")).join("\r\n");
     const blob = new Blob(["\ufeff", contenido], { type: "text/csv;charset=utf-8;" });
@@ -778,7 +807,7 @@ function Reportes() {
     link.href = url;
     link.download = `reporte_facturas_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const facturaEnVista = facturaDetalle || facturaSeleccionada;
@@ -792,6 +821,7 @@ function Reportes() {
         filtroVendedor={filtroVendedor} setFiltroVendedor={setFiltroVendedor}
         filtroCliente={filtroCliente} setFiltroCliente={setFiltroCliente}
         filtroMetodoPago={filtroMetodoPago} setFiltroMetodoPago={setFiltroMetodoPago}
+        filtroEstado={filtroEstado} setFiltroEstado={setFiltroEstado}
         vendedores={vendedores} clientes={clientes} busqueda={busqueda}
         setBusqueda={setBusqueda} handleBuscar={handleBuscar} loading={loading}
         facturas={facturasFiltradas} resumen={resumenActual}
@@ -902,7 +932,7 @@ function Reportes() {
                   </table>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   <div className="rounded-2xl bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-100 dark:border-cyan-900 p-4">
                     <p className="text-xs text-cyan-700 dark:text-cyan-300">Subtotal</p>
                     <p className="text-lg font-bold text-cyan-900 dark:text-cyan-100">{formatCurrency(facturaEnVista.Subtotal)}</p>
@@ -915,7 +945,20 @@ function Reportes() {
                     <p className="text-xs text-emerald-700 dark:text-emerald-300">Total</p>
                     <p className="text-lg font-bold text-emerald-900 dark:text-emerald-100">{formatCurrency(facturaEnVista.Total)}</p>
                   </div>
+                  <div className="rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 p-4">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">Abonado · {facturaEnVista.Estado || "Pendiente"}</p>
+                    <p className="text-lg font-bold text-blue-900 dark:text-blue-100">{formatCurrency(facturaEnVista.MontoPagado)}</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">Saldo: {formatCurrency(facturaEnVista.Saldo ?? facturaEnVista.Total)}</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">Vence: {formatDate(facturaEnVista.FechaVencimiento)}</p>
+                  </div>
                 </div>
+
+                <section className="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
+                  <h4 className="border-b border-gray-100 px-4 py-3 text-sm font-bold text-gray-800 dark:border-gray-800 dark:text-gray-100">Historial de abonos</h4>
+                  {(facturaEnVista.Pagos || []).length ? (
+                    <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="bg-gray-50 dark:bg-gray-800"><tr><th className="px-3 py-2 text-left">Fecha</th><th className="px-3 py-2 text-left">Método</th><th className="px-3 py-2 text-left">Pagador</th><th className="px-3 py-2 text-right">Monto</th></tr></thead><tbody>{facturaEnVista.Pagos.map((pago) => <tr key={pago.IdPago} className="border-t border-gray-100 dark:border-gray-800"><td className="px-3 py-2">{formatDate(pago.FechaPago)}</td><td className="px-3 py-2">{pago.MetodoPago}</td><td className="px-3 py-2">{pago.Pagador || "—"}</td><td className="px-3 py-2 text-right font-semibold">{formatCurrency(pago.Monto)}</td></tr>)}</tbody></table></div>
+                  ) : <p className="px-4 py-4 text-sm text-gray-500">Todavía no se han registrado abonos.</p>}
+                </section>
 
                 <div className="flex flex-wrap gap-3">
                   <button

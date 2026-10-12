@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { buildApiUrl } from "../config/api";
 import { showErrorAlert, showSuccessAlert } from "../utils/sweetAlertHelper";
+import { printPaymentInvoice } from "../utils/printPaymentInvoice";
 
 const money = (value) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(value || 0));
 const date = (value) => {
@@ -23,6 +24,7 @@ export default function Pagos() {
   const [abonos, setAbonos] = useState([]);
   const [form, setForm] = useState(emptyPayment);
   const [guardando, setGuardando] = useState(false);
+  const [imprimiendo, setImprimiendo] = useState(false);
 
   const cargarFacturas = useCallback(async () => {
     setLoading(true);
@@ -75,6 +77,29 @@ export default function Pagos() {
     }
   };
 
+  const imprimirFactura = async () => {
+    if (!seleccionada) return;
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+    if (!printWindow) {
+      showErrorAlert("Ventana bloqueada", "Permite las ventanas emergentes para imprimir o guardar la factura como PDF.");
+      return;
+    }
+    setImprimiendo(true);
+    try {
+      const [invoiceResponse, paymentResponse] = await Promise.all([
+        axios.get(buildApiUrl(`/api/facturas/detalle/${seleccionada.IdFactura}`)),
+        axios.get(buildApiUrl(`/api/pagos/${seleccionada.IdFactura}/abonos`)),
+      ]);
+      if (!invoiceResponse.data.success || !invoiceResponse.data.factura) throw new Error("No se pudo cargar el detalle de la factura.");
+      printPaymentInvoice(printWindow, invoiceResponse.data.factura, paymentResponse.data.abonos || [], seleccionada);
+    } catch (error) {
+      printWindow.close();
+      showErrorAlert("No se pudo preparar la factura", error.response?.data?.error || error.message || "Inténtalo de nuevo.");
+    } finally {
+      setImprimiendo(false);
+    }
+  };
+
   return <main className="payments-page">
     <nav className="payments-breadcrumb"><span>⌂</span><span>Inicio</span><b>›</b><strong>Pagos</strong></nav>
     <header className="payments-heading"><div><span className="payments-heading-icon">$</span><div><h1>Pagos y cuentas por cobrar</h1><p>Controla saldos, abonos y fechas límite de tus facturas.</p></div></div><span className="payments-term-note">Cada factura vence 30 días después de su emisión</span></header>
@@ -93,7 +118,7 @@ export default function Pagos() {
       </tbody></table></div>
     </section>
 
-    {seleccionada && <div className="payments-overlay" onMouseDown={(event) => event.target === event.currentTarget && setSeleccionada(null)}><section className="payments-modal" role="dialog" aria-modal="true" aria-labelledby="payments-modal-title"><header><div><h2 id="payments-modal-title">Factura #{seleccionada.IdFactura}</h2><p>{seleccionada.NombreCliente} · Vence {date(seleccionada.FechaVencimiento)}</p></div><button type="button" onClick={() => setSeleccionada(null)} aria-label="Cerrar">×</button></header>
+    {seleccionada && <div className="payments-overlay" onMouseDown={(event) => event.target === event.currentTarget && setSeleccionada(null)}><section className="payments-modal" role="dialog" aria-modal="true" aria-labelledby="payments-modal-title"><header><div><h2 id="payments-modal-title">Factura #{seleccionada.IdFactura}</h2><p>{seleccionada.NombreCliente} · Vence {date(seleccionada.FechaVencimiento)}</p></div><div className="payments-modal-actions"><button type="button" className="payments-print" onClick={imprimirFactura} disabled={imprimiendo}>{imprimiendo ? "Preparando..." : "Imprimir / guardar PDF"}</button><button type="button" onClick={() => setSeleccionada(null)} aria-label="Cerrar">×</button></div></header>
       <div className="payments-modal-summary"><span>Total <strong>{money(seleccionada.Total)}</strong></span><span>Abonado <strong>{money(seleccionada.MontoPagado)}</strong></span><span>Saldo <strong>{money(seleccionada.Saldo)}</strong></span></div>
       {Number(seleccionada.Saldo) > 0 && <form className="payments-form" onSubmit={registrarAbono}><h3>Registrar abono</h3><div className="payments-form-grid"><label>Monto<input type="number" min="0.01" max={seleccionada.Saldo} step="0.01" required value={form.monto} onChange={(event) => setForm({ ...form, monto: event.target.value })} placeholder={`Hasta ${money(seleccionada.Saldo)}`}/></label><label>Medio de pago<select value={form.metodoPago} onChange={(event) => setForm({ ...form, metodoPago: event.target.value })}><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Nequi</option><option>Daviplata</option></select></label><label>Quién realizó el pago<input maxLength="150" value={form.pagador} onChange={(event) => setForm({ ...form, pagador: event.target.value })} placeholder="Nombre del pagador"/></label><label>Observaciones<input maxLength="500" value={form.observaciones} onChange={(event) => setForm({ ...form, observaciones: event.target.value })} placeholder="Opcional"/></label></div><button className="payments-save" disabled={guardando}>{guardando ? "Guardando..." : "Guardar abono"}</button></form>}
       <h3 className="payments-history-title">Historial de pagos</h3>{abonos.length ? <div className="payments-history">{abonos.map((abono) => <article key={abono.IdPago}><div><strong>{money(abono.Monto)}</strong><span>{date(abono.FechaPago)} · {abono.MetodoPago}</span></div><div><b>{abono.Pagador || seleccionada.NombreCliente}</b>{abono.Observaciones && <small>{abono.Observaciones}</small>}</div></article>)}</div> : <p className="payments-no-history">Esta factura todavía no tiene abonos registrados.</p>}

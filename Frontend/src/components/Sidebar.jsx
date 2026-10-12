@@ -11,6 +11,7 @@ const menu = [
   { to: "/proveedores", label: "Proveedores", icon: "▱" },
   { to: "/pagos", label: "Pagos", icon: "$" },
   { to: "/reportes", label: "Reportes", icon: "▥" },
+  { to: "/comisiones", label: "Comisiones", icon: "%" },
 ];
 
 export default function Sidebar({ isOpen = true, collapsed = false, onClose = () => {}, onToggleCollapse = () => {}, onLogout = () => {} }) {

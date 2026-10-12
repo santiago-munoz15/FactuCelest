@@ -16,10 +16,12 @@ const formatearFecha = (fecha) => {
     return "";
   }
 
+  const fechaSql = fecha instanceof Date && fecha.getUTCHours() === 0 && fecha.getUTCMinutes() === 0 && fecha.getUTCSeconds() === 0;
   return valor.toLocaleDateString("es-CO", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    ...(fechaSql ? { timeZone: "UTC" } : {}),
   });
 };
 
@@ -42,7 +44,18 @@ const construirFilasExcel = (factura, vendedor) => {
     [],
     ["Factura", `#${factura.IdFactura}`],
     ["Fecha de la factura", formatearFecha(factura.Fecha)],
+    ["Fecha de vencimiento", formatearFecha(factura.FechaVencimiento)],
     ["Metodo de pago", factura.MetodoPago ?? ""],
+    ["Estado de pago", factura.Estado ?? "Pendiente"],
+    ["Total abonado", Number(factura.MontoPagado ?? 0)],
+    ["Saldo pendiente", Number(factura.Saldo ?? factura.Total ?? 0)],
+    [],
+    ["Historial de abonos"],
+    ["Fecha", "Método", "Pagador", "Monto", "Observaciones"],
+    ...(factura.Pagos ?? []).map((pago) => [
+      formatearFecha(pago.FechaPago), pago.MetodoPago ?? "", pago.Pagador ?? "",
+      Number(pago.Monto ?? 0), pago.Observaciones ?? "",
+    ]),
     [],
     ["Código", "Descripción", "Talla", "Cantidad", "Valor Unit.", "Valor Total"],
   ];
@@ -174,13 +187,14 @@ const FacturaController = {
 
   obtenerFacturasReporte: async (req, res) => {
     try {
-      const { periodo = "todos", desde, hasta, busqueda = "" } = req.query;
+      const { periodo = "todos", desde, hasta, busqueda = "", vendedor = "" } = req.query;
 
       const result = await FacturaModel.obtenerFacturasReporte({
         periodo,
         desde,
         hasta,
         busqueda,
+        vendedor,
       });
 
       if (!result.success) {
