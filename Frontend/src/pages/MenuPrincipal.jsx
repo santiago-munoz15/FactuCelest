@@ -47,6 +47,7 @@ export default function MenuPrincipal() {
   const [productos, setProductos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [ventasHoy, setVentasHoy] = useState(0);
+  const [facturasPendientes, setFacturasPendientes] = useState(0);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState({});
 
@@ -58,23 +59,24 @@ export default function MenuPrincipal() {
       axios.get(buildApiUrl("/api/productos/listarp")),
       axios.get(buildApiUrl("/api/clientes/listar")),
       axios.get(buildApiUrl("/api/facturas/reporte?periodo=dia")),
-    ]).then(([invoices, sales, products, customers, today]) => {
+      axios.get(buildApiUrl("/api/pagos")),
+    ]).then(([invoices, sales, products, customers, today, payments]) => {
       if (invoices.status === "fulfilled" && invoices.value.data.success) setFacturas(invoices.value.data.facturas || []);
       if (sales.status === "fulfilled" && sales.value.data.success) setVentas(sales.value.data.ventas || []);
       if (products.status === "fulfilled" && Array.isArray(products.value.data)) setProductos(products.value.data);
       if (customers.status === "fulfilled" && customers.value.data.success) setClientes(customers.value.data.clientes || []);
       if (today.status === "fulfilled" && today.value.data.success) setVentasHoy((today.value.data.facturas || []).reduce((sum, invoice) => sum + Number(invoice.Total || 0), 0));
+      if (payments.status === "fulfilled" && payments.value.data.success) setFacturasPendientes((payments.value.data.facturas || []).filter((invoice) => Number(invoice.Saldo) > 0).length);
     }).finally(() => setLoading(false));
   }, []);
 
-  const pendientes = facturas.filter((invoice) => /pendiente/i.test(invoice.Estado || invoice.EstadoFactura || "")).length;
   const displayName = user.Nombre || user.nombre || user.NombreUsuario || "Santiago Muñoz";
   const today = new Date();
 
   return <div className="dashboard-page">
     <header className="dashboard-header"><div className="dashboard-welcome"><span className="welcome-mark">✦</span><div><h1>Bienvenido, {displayName.split(" ")[0]}</h1><p>Aquí tienes un resumen general de tu sistema de facturación.</p></div></div><div className="dashboard-header-actions"><div className="dashboard-date"><span className="header-icon"><Icon name="calendar"/></span><div><strong>{today.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</strong><span>{today.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</span></div></div><button className="header-icon notification-button" aria-label="Notificaciones"><Icon name="bell"/><i /></button><button className="dashboard-avatar" aria-label="Perfil">{initials(displayName)}</button></div></header>
 
-    <section className="dashboard-stats" aria-label="Resumen"><StatCard icon="chart" tone="cyan" label="Ventas de Hoy" value={loading ? "…" : money(ventasHoy)} note="Total facturado hoy"/><StatCard icon="invoice" tone="orange" label="Facturas Pendientes" value={loading ? "…" : pendientes || "—"} note={pendientes ? "Por gestionar" : "Estado no disponible"}/><StatCard icon="box" tone="purple" label="Productos Registrados" value={loading ? "…" : productos.length} note="En inventario"/><StatCard icon="users" tone="green" label="Clientes Registrados" value={loading ? "…" : clientes.length} note="En tu sistema"/></section>
+    <section className="dashboard-stats" aria-label="Resumen"><StatCard icon="chart" tone="cyan" label="Ventas de Hoy" value={loading ? "…" : money(ventasHoy)} note="Total facturado hoy"/><StatCard icon="invoice" tone="orange" label="Facturas Pendientes" value={loading ? "…" : facturasPendientes} note="Con saldo por cobrar"/><StatCard icon="box" tone="purple" label="Productos Registrados" value={loading ? "…" : productos.length} note="En inventario"/><StatCard icon="users" tone="green" label="Clientes Registrados" value={loading ? "…" : clientes.length} note="En tu sistema"/></section>
 
     <section className="dashboard-main-grid"><article className="dashboard-panel sales-panel"><div className="panel-heading"><div className="panel-title"><span className="panel-icon cyan"><Icon name="chart"/></span><div><h2>Ventas Mensuales</h2><p>Comparativo de ventas de los últimos meses</p></div></div><span className="period-pill">Últimos meses</span></div><SalesChart sales={ventas}/><div className="chart-legend"><i/>Ventas</div></article>
       <article className="dashboard-panel invoices-panel"><div className="panel-heading"><div className="panel-title"><span className="panel-icon purple"><Icon name="invoice"/></span><h2>Últimas Facturas</h2></div><button className="panel-link" onClick={() => navigate("/reportes")}>Ver todas →</button></div><div className="dashboard-table-scroll"><table className="dashboard-table"><thead><tr><th>#</th><th>Cliente</th><th>Fecha</th><th>Total</th></tr></thead><tbody>{!loading && facturas.length === 0 ? <tr><td colSpan="4" className="table-empty">No hay facturas registradas.</td></tr> : facturas.map((invoice) => <tr key={invoice.IdFactura}><td className="invoice-id">#{invoice.IdFactura}</td><td>{invoice.NombreCliente || "Cliente"}</td><td>{shortDate(invoice.Fecha)}</td><td className="invoice-total">{money(invoice.Total)}</td></tr>)}</tbody></table></div></article></section>

@@ -73,7 +73,7 @@ const FacturaModel = {
         Subtotal,
         Iva,
         Total,
-        MetodoPago = "Efectivo",
+        MetodoPago = "Crédito 30 días",
         NombreVendedor = null,
         TelefonoVendedor = null,
         Observaciones = null,
@@ -98,6 +98,7 @@ const FacturaModel = {
           INSERT INTO Facturas (
             IdClienteFK,
             Fecha,
+            FechaVencimiento,
             Subtotal,
             Impuesto,
             Total,
@@ -110,6 +111,7 @@ const FacturaModel = {
           VALUES (
             @DocumentoCliente,
             GETDATE(),
+            DATEADD(day, 30, CAST(GETDATE() AS date)),
             @Subtotal,
             @Impuesto,
             @Total,
@@ -356,6 +358,14 @@ const FacturaModel = {
       const detalleNormalizado = normalizarDetalle(Detalle);
 
       await transaction.begin();
+
+      const pagosExistentes = await transaction.request()
+        .input("IdFactura", sql.BigInt, idFactura)
+        .query("SELECT COALESCE(SUM(Monto), 0) AS MontoPagado FROM dbo.Pagos WITH (UPDLOCK, HOLDLOCK) WHERE IdFacturaFK = @IdFactura");
+      const montoPagado = Number(pagosExistentes.recordset[0]?.MontoPagado || 0);
+      if (Number(Total) < montoPagado) {
+        throw new Error("El total de la factura no puede quedar por debajo de los abonos ya registrados.");
+      }
 
       const updateResult = await transaction
         .request()

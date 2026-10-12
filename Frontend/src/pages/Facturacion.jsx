@@ -50,7 +50,7 @@ export default function Facturacion() {
   const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
   const [resultadosCliente, setResultadosCliente] = useState([]);
   const [resultadosVendedor, setResultadosVendedor] = useState([]);
-  const [metodoPago, setMetodoPago] = useState("Efectivo");
+  const [metodoPago, setMetodoPago] = useState("Crédito 30 días");
   const [observaciones, setObservaciones] = useState("");
 
   const [totales, setTotales] = useState({
@@ -645,7 +645,7 @@ export default function Facturacion() {
       setVendedorTelefono("");
       setVendedorId(null);
       setDetalle([]);
-      setMetodoPago("Efectivo");
+      setMetodoPago("Crédito 30 días");
       setObservaciones("");
       setTotales({ subtotal: 0, iva: 0, total: 0 });
     }

@@ -40,6 +40,28 @@ const ensureSchema = async (pool) => {
 
     IF COL_LENGTH('dbo.Facturas', 'Observaciones') IS NULL
       ALTER TABLE dbo.Facturas ADD Observaciones VARCHAR(500) NULL;
+
+    IF COL_LENGTH('dbo.Facturas', 'FechaVencimiento') IS NULL
+      ALTER TABLE dbo.Facturas ADD FechaVencimiento DATE NULL;
+
+    UPDATE dbo.Facturas
+    SET FechaVencimiento = DATEADD(day, 30, CAST(Fecha AS date))
+    WHERE FechaVencimiento IS NULL AND Fecha IS NOT NULL;
+
+    IF OBJECT_ID('dbo.Pagos', 'U') IS NULL
+    BEGIN
+      CREATE TABLE dbo.Pagos (
+        IdPago BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        IdFacturaFK BIGINT NOT NULL,
+        FechaPago DATETIME NOT NULL DEFAULT(GETDATE()),
+        Monto DECIMAL(18,2) NOT NULL CHECK (Monto > 0),
+        MetodoPago VARCHAR(30) NOT NULL,
+        Pagador VARCHAR(150) NULL,
+        Observaciones VARCHAR(500) NULL,
+        CONSTRAINT FK_Pagos_Facturas FOREIGN KEY (IdFacturaFK) REFERENCES dbo.Facturas(IdFactura)
+      );
+      CREATE INDEX IX_Pagos_IdFacturaFK_FechaPago ON dbo.Pagos(IdFacturaFK, FechaPago);
+    END;
   `);
 };
 

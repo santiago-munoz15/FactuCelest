@@ -9,6 +9,7 @@ import ProveedorRouter from "./routes/ProveedorRouter.js";
 import UsuarioRouter from "./routes/UsuarioRoutes.js";
 import VendedorRouter from "./routes/VendedorRoutes.js";
 import FacturaRouter from "./routes/FacturaRoutes.js";
+import PagoRoutes from "./routes/PagoRoutes.js";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use("/api/usuarios", UsuarioRouter);
 app.use("/api/vendedores", VendedorRouter);
 app.use("/api/clientes", ClienteRoutes);
 app.use("/api/facturas", FacturaRouter);
+app.use("/api/pagos", PagoRoutes);
 
 const port = Number(process.env.PORT) || 3000;
 

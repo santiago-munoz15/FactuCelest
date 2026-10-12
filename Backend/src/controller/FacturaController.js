@@ -74,7 +74,7 @@ const FacturaController = {
         Subtotal,
         Iva,
         Total,
-        MetodoPago = "Efectivo",
+        MetodoPago = "Crédito 30 días",
         NombreVendedor = null,
         TelefonoVendedor = null,
         Observaciones = null,
