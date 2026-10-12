@@ -34,7 +34,7 @@ const MainLayout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-800 transition-colors duration-300 pb-12">
+    <div className="app-shell min-h-screen bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
       {mobileMenuOpen && (
         <button
           type="button"
@@ -46,7 +46,7 @@ const MainLayout = ({ children }) => {
 
       {/* Menú lateral */}
       <Sidebar
-        isOpen={sidebarOpen || mobileMenuOpen}
+        isOpen={mobileMenuOpen}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((value) => !value)}
         onLogout={handleLogout}
@@ -57,14 +57,12 @@ const MainLayout = ({ children }) => {
 
       {/* Contenido principal */}
       <div className={`app-layout-content flex flex-col min-w-0 w-full transition-all duration-300 ${sidebarOpen ? (sidebarCollapsed ? "sidebar-is-collapsed" : "sidebar-is-expanded") : "sidebar-is-hidden"}`}>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
+        <main className="app-main flex-1 min-w-0 overflow-y-auto p-4 md:p-6 bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
+          <button type="button" className="mobile-menu-button" onClick={() => setMobileMenuOpen(true)} aria-label="Abrir menú">☰</button>
           {children}
         </main>
 
-        {/* Footer global */}
-        <div className="fixed bottom-0 left-0 right-0 z-20 md:left-auto md:right-0 md:pl-72">
-          <Footer />
-        </div>
+        <Footer />
       </div>
     </div>
   );

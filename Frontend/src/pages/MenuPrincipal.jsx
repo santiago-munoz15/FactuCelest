@@ -1,469 +1,89 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import "../App.css";
 import { buildApiUrl } from "../config/api";
+import "../App.css";
 
-function MenuPrincipal() {
-  const navigate = useNavigate();
-  const [facturas, setFacturas] = useState([]);
-  const [productos, setProductos] = useState([]);
-  const [clientesRegistrados, setClientesRegistrados] = useState(0);
-  const [ventasMensuales, setVentasMensuales] = useState([]);
-  const [ventasHoyTotal, setVentasHoyTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [loadingVentas, setLoadingVentas] = useState(true);
-  const [loadingResumen, setLoadingResumen] = useState(true);
-  const [loadingClientes, setLoadingClientes] = useState(true);
+const money = (value) => `$${Number(value || 0).toLocaleString("es-CO")}`;
+const shortDate = (value) => new Date(value).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+const initials = (name = "Santiago Muñoz") => name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 
-  // Cargar últimas facturas y ventas mensuales al montar el componente
-  useEffect(() => {
-    fetchUltimasFacturas();
-    fetchVentasMensuales();
-    fetchProductos();
-    fetchVentasHoy();
-    fetchClientes();
-  }, []);
-
-  const fetchUltimasFacturas = async () => {
-    try {
-      const res = await axios.get(buildApiUrl("/api/facturas/ultimas?cantidad=6"));
-      if (res.data.success) {
-        setFacturas(res.data.facturas);
-      }
-      setLoading(false);
-    } catch (error) {
-      console.error("Error al cargar facturas:", error);
-      setLoading(false);
-    }
+function Icon({ name, size = 20 }) {
+  const paths = {
+    chart: <><path d="M4 19V5"/><path d="M4 19h17"/><path d="M8 15v-4M13 15V7M18 15v-7"/></>,
+    invoice: <><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v5h5M10 12h6M10 16h6"/></>,
+    box: <><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="M3 8v9l9 5 9-5V8M12 13v9"/></>,
+    users: <><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>,
+    calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01"/></>,
+    bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></>,
   };
-
-  const fetchVentasMensuales = async () => {
-    try {
-      const res = await axios.get(buildApiUrl("/api/facturas/ventas-mensuales"));
-      if (res.data.success) {
-        setVentasMensuales(res.data.ventas);
-      }
-      setLoadingVentas(false);
-    } catch (error) {
-      console.error("Error al cargar ventas mensuales:", error);
-      setLoadingVentas(false);
-    }
-  };
-
-  const fetchProductos = async () => {
-    try {
-      const res = await axios.get(buildApiUrl("/api/productos/listarp"));
-      if (Array.isArray(res.data)) {
-        setProductos(res.data);
-      }
-    } catch (error) {
-      console.error("Error al cargar productos:", error);
-    } finally {
-      setLoadingResumen(false);
-    }
-  };
-
-  const fetchClientes = async () => {
-    try {
-      const res = await axios.get(buildApiUrl("/api/clientes/listar"));
-      if (res.data.success) {
-        setClientesRegistrados((res.data.clientes || []).length);
-      }
-    } catch (error) {
-      console.error("Error al cargar clientes:", error);
-    } finally {
-      setLoadingClientes(false);
-    }
-  };
-
-  const fetchVentasHoy = async () => {
-    try {
-      const res = await axios.get(buildApiUrl("/api/facturas/reporte?periodo=dia"));
-      if (res.data.success) {
-        const totalHoy = (res.data.facturas || []).reduce(
-          (acc, factura) => acc + Number(factura.Total || 0),
-          0
-        );
-        setVentasHoyTotal(totalHoy);
-      }
-    } catch (error) {
-      console.error("Error al cargar ventas de hoy:", error);
-    } finally {
-      setLoadingResumen(false);
-    }
-  };
-
-  const formatearFecha = (fecha) => {
-    const date = new Date(fecha);
-    return date.toLocaleDateString("es-CO", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  // Obtener el mes y año actual
-  const obtenerMesActual = () => {
-    const meses = [
-      "Enero",
-      "Febrero",
-      "Marzo",
-      "Abril",
-      "Mayo",
-      "Junio",
-      "Julio",
-      "Agosto",
-      "Septiembre",
-      "Octubre",
-      "Noviembre",
-      "Diciembre",
-    ];
-    const fecha = new Date();
-    return `${meses[fecha.getMonth()]} ${fecha.getFullYear()}`;
-  };
-
-  // Calcular el valor máximo para escalar las barras
-  const maxVenta =
-    ventasMensuales.length > 0
-      ? Math.max(...ventasMensuales.map((v) => v.TotalVentas))
-      : 0;
-
-  const productosRegistrados = productos.length;
-
-  return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header del Dashboard */}
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-          📊 Dashboard
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Resumen general del sistema de facturación
-        </p>
-      </div>
-
-      {/* Tarjetas de Estadísticas - móvil */}
-      <div className="grid grid-cols-2 gap-3 md:hidden">
-        <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-700 p-4 text-white shadow-lg">
-          <p className="text-xs text-cyan-100 mb-2">Hoy</p>
-          <p className="text-xl font-bold">
-            {loadingResumen ? "..." : `$${ventasHoyTotal.toLocaleString("es-CO")}`}
-          </p>
-          <p className="text-xs text-cyan-100 mt-1">Ventas</p>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-orange-500 to-orange-700 p-4 text-white shadow-lg">
-          <p className="text-xs text-orange-100 mb-2">Pendiente</p>
-          <p className="text-xl font-bold">2</p>
-          <p className="text-xs text-orange-100 mt-1">Facturas</p>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 p-4 text-white shadow-lg">
-          <p className="text-xs text-purple-100 mb-2">Total</p>
-          <p className="text-xl font-bold">
-            {loadingResumen ? "..." : productosRegistrados}
-          </p>
-          <p className="text-xs text-purple-100 mt-1">Productos</p>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-green-500 to-green-700 p-4 text-white shadow-lg">
-          <p className="text-xs text-green-100 mb-2">Activos</p>
-          <p className="text-xl font-bold">
-            {loadingClientes ? "..." : clientesRegistrados}
-          </p>
-          <p className="text-xs text-green-100 mt-1">Clientes</p>
-        </div>
-      </div>
-
-      {/* Tarjetas de Estadísticas - escritorio */}
-      <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
-        {/* Card 1 - Ventas de Hoy */}
-        <div className="bg-gradient-to-br from-cyan-500 to-cyan-700 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white bg-opacity-20 rounded-full p-3">
-              <p className="text-3xl">📈</p>
-            </div>
-            <span className="text-sm bg-black bg-opacity-20 px-3 py-1 rounded-full">
-              Hoy
-            </span>
-          </div>
-          <p className="text-3xl font-bold mb-1">
-            {loadingResumen ? "..." : `$${ventasHoyTotal.toLocaleString("es-CO")}`}
-          </p>
-          <p className="text-cyan-100 text-sm">Ventas de Hoy</p>
-        </div>
-
-        {/* Card 2 - Facturas Pendientes */}
-        <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white bg-opacity-20 rounded-full p-3">
-              <p className="text-3xl">🧾</p>
-            </div>
-            <span className="text-sm bg-black bg-opacity-20 px-3 py-1 rounded-full">
-              Pendiente
-            </span>
-          </div>
-          <p className="text-3xl font-bold mb-1">2</p>
-          <p className="text-orange-100 text-sm">Facturas Pendientes</p>
-        </div>
-
-        {/* Card 3 - Productos Registrados */}
-        <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white bg-opacity-20 rounded-full p-3">
-              <p className="text-3xl">📦</p>
-            </div>
-            <span className="text-sm bg-black bg-opacity-20 px-3 py-1 rounded-full">
-              Total
-            </span>
-          </div>
-          <p className="text-3xl font-bold mb-1">
-            {loadingResumen ? "..." : productosRegistrados}
-          </p>
-          <p className="text-purple-100 text-sm">Productos Registrados</p>
-        </div>
-
-        {/* Card 4 - Clientes Activos */}
-        <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-2xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white bg-opacity-20 rounded-full p-3">
-              <p className="text-3xl">👥</p>
-            </div>
-            <span className="text-sm bg-black bg-opacity-20 px-3 py-1 rounded-full">
-              Activos
-            </span>
-          </div>
-          <p className="text-3xl font-bold mb-1">
-            {loadingClientes ? "..." : clientesRegistrados}
-          </p>
-          <p className="text-green-100 text-sm">Clientes Registrados</p>
-        </div>
-      </div>
-
-      {/* Resumen compacto móvil */}
-      <div className="grid gap-4 md:hidden">
-        <div className="app-mobile-card">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-gray-800 dark:text-gray-100">
-              Ventas Mensuales
-            </h3>
-            <span className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold">
-              {obtenerMesActual()}
-            </span>
-          </div>
-          {loadingVentas ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              ⏳ Cargando resumen...
-            </p>
-          ) : ventasMensuales.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No hay ventas este mes.
-            </p>
-          ) : (
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                  ${ventasMensuales.reduce((acc, venta) => acc + venta.TotalVentas, 0).toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {ventasMensuales.length} días con ventas
-                </p>
-              </div>
-              <div className="text-4xl">📊</div>
-            </div>
-          )}
-        </div>
-
-        <div className="app-mobile-card">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-gray-800 dark:text-gray-100">
-              Últimas Facturas
-            </h3>
-            <span className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold">
-              {facturas.length} recientes
-            </span>
-          </div>
-
-          {loading ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              ⏳ Cargando facturas...
-            </p>
-          ) : facturas.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No hay facturas registradas.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {facturas.slice(0, 3).map((factura) => (
-                <div
-                  key={factura.IdFactura}
-                  className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-700/50"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-gray-800 dark:text-gray-100">
-                        #{factura.IdFactura}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
-                        {factura.NombreCliente}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {formatearFecha(factura.Fecha)}
-                      </p>
-                    </div>
-                    <p className="font-bold text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
-                      ${factura.Total.toLocaleString("es-CO")}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Gráfico y Tabla - escritorio */}
-      <div className="hidden md:grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Resumen Ventas Mensuales */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 md:p-6 transition-colors duration-300 overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-              Ventas Mensuales
-            </h3>
-            <span className="text-cyan-600 dark:text-cyan-400 text-sm font-semibold">
-              {obtenerMesActual()}
-            </span>
-          </div>
-
-          {loadingVentas ? (
-            <div className="h-64 flex items-center justify-center">
-              <p className="text-gray-500 dark:text-gray-400">
-                ⏳ Cargando gráfico...
-              </p>
-            </div>
-          ) : ventasMensuales.length === 0 ? (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-900 rounded-xl h-64 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
-              <div className="text-center">
-                <p className="text-6xl mb-2">📊</p>
-                <p className="text-gray-500 dark:text-gray-400 font-medium">
-                  No hay ventas este mes
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="h-64 flex items-end justify-around gap-2 px-2 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-900 rounded-xl p-4 overflow-x-auto">
-              {ventasMensuales.map((venta) => {
-                const altura =
-                  maxVenta > 0 ? (venta.TotalVentas / maxVenta) * 100 : 0;
-                const alturaMinima = Math.max(altura, 5); // Altura mínima del 5% para que se vea
-                return (
-                  <div
-                    key={venta.Dia}
-                    className="flex-1 flex flex-col items-center gap-2"
-                  >
-                    <div className="relative group cursor-pointer w-full h-full flex items-end">
-                      <div
-                        className="bg-gradient-to-t from-cyan-500 to-cyan-400 hover:from-cyan-600 hover:to-cyan-500 rounded-t-lg transition-all duration-300 w-full"
-                        style={{ height: `${alturaMinima}%`, minHeight: "8px" }}
-                      >
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-2 px-3 whitespace-nowrap shadow-lg z-10">
-                          <p className="font-semibold">
-                            ${venta.TotalVentas.toLocaleString()}
-                          </p>
-                          <p className="text-gray-300">
-                            {venta.CantidadFacturas} facturas
-                          </p>
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                      {venta.Dia}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Últimas Facturas */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 md:p-6 transition-colors duration-300 overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-              Últimas Facturas
-            </h3>
-            <button
-              type="button"
-              onClick={() => navigate("/reportes")}
-              className="text-cyan-600 dark:text-cyan-400 text-sm font-semibold hover:underline"
-            >
-              Ver todas →
-            </button>
-          </div>
-          <div className="overflow-x-auto -mx-4 md:mx-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-3 px-2 text-gray-600 dark:text-gray-300 font-semibold">
-                    ID
-                  </th>
-                  <th className="text-left py-3 px-2 text-gray-600 dark:text-gray-300 font-semibold">
-                    Cliente
-                  </th>
-                  <th className="text-left py-3 px-2 text-gray-600 dark:text-gray-300 font-semibold">
-                    Fecha
-                  </th>
-                  <th className="text-right py-3 px-2 text-gray-600 dark:text-gray-300 font-semibold">
-                    Total
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="text-gray-700 dark:text-gray-300">
-                {loading ? (
-                  <tr>
-                    <td
-                      colSpan="4"
-                      className="py-8 text-center text-gray-500 dark:text-gray-400"
-                    >
-                      ⏳ Cargando facturas...
-                    </td>
-                  </tr>
-                ) : facturas.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan="4"
-                      className="py-8 text-center text-gray-500 dark:text-gray-400"
-                    >
-                      <p className="text-4xl mb-2">📄</p>
-                      <p>No hay facturas registradas</p>
-                    </td>
-                  </tr>
-                ) : (
-                  facturas.map((factura) => (
-                    <tr
-                      key={factura.IdFactura}
-                      className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                    >
-                      <td className="py-3 px-2 font-medium">
-                        #{factura.IdFactura}
-                      </td>
-                      <td className="py-3 px-2">{factura.NombreCliente}</td>
-                      <td className="py-3 px-2 text-sm text-gray-500 dark:text-gray-400">
-                        {formatearFecha(factura.Fecha)}
-                      </td>
-                      <td className="py-3 px-2 text-right font-semibold text-cyan-600 dark:text-cyan-400">
-                        ${factura.Total.toLocaleString("es-CO")}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
 
-export default MenuPrincipal;
+function SalesChart({ sales }) {
+  const points = useMemo(() => {
+    const grouped = new Map();
+    sales.forEach((sale) => {
+      const date = new Date(sale.Dia ?? sale.Fecha);
+      if (Number.isNaN(date.getTime())) return;
+      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      const current = grouped.get(key) || { date, total: 0 };
+      current.total += Number(sale.TotalVentas ?? sale.Total ?? 0);
+      grouped.set(key, current);
+    });
+    return [...grouped.values()].sort((a, b) => a.date - b.date).slice(-7);
+  }, [sales]);
+  if (!points.length) return <div className="dashboard-empty">No hay ventas para mostrar en este periodo.</div>;
+  const max = Math.max(...points.map((item) => item.total), 1);
+  const coords = points.map((item, i) => `${38 + i * (700 / Math.max(points.length - 1, 1))},${168 - item.total / max * 125}`).join(" ");
+  const area = `38,168 ${coords} ${38 + (points.length - 1) * (700 / Math.max(points.length - 1, 1))},168`;
+  return <div className="dashboard-chart-wrap"><div className="chart-labels"><span>{money(max)}</span><span>{money(max * .66)}</span><span>{money(max * .33)}</span><span>$0</span></div><svg className="dashboard-chart" viewBox="0 0 760 195" role="img" aria-label="Ventas mensuales"><defs><linearGradient id="salesFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#13c2dc" stopOpacity=".45"/><stop offset="100%" stopColor="#13c2dc" stopOpacity=".04"/></linearGradient></defs>{[43, 84, 126, 168].map((y) => <line key={y} x1="38" x2="738" y1={y} y2={y} className="chart-gridline"/>)}<polygon points={area} fill="url(#salesFill)"/><polyline points={coords} fill="none" stroke="#08b9d5" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>{points.map((item, i) => { const x = 38 + i * (700 / Math.max(points.length - 1, 1)); const y = 168 - item.total / max * 125; return <circle key={item.date.toISOString()} cx={x} cy={y} r="4.5" fill="#08b9d5"/>; })}<line x1="38" x2="738" y1="168" y2="168" className="chart-axis"/></svg><div className="chart-months">{points.map((item) => <span key={item.date.toISOString()}>{item.date.toLocaleDateString("es-CO", { month: "short" })}</span>)}</div></div>;
+}
+
+export default function MenuPrincipal() {
+  const navigate = useNavigate();
+  const [facturas, setFacturas] = useState([]);
+  const [ventas, setVentas] = useState([]);
+  const [productos, setProductos] = useState([]);
+  const [clientes, setClientes] = useState([]);
+  const [ventasHoy, setVentasHoy] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState({});
+
+  useEffect(() => {
+    try { setUser(JSON.parse(localStorage.getItem("usuario") || "{}")); } catch { setUser({}); }
+    Promise.allSettled([
+      axios.get(buildApiUrl("/api/facturas/ultimas?cantidad=5")),
+      axios.get(buildApiUrl("/api/facturas/ventas-mensuales")),
+      axios.get(buildApiUrl("/api/productos/listarp")),
+      axios.get(buildApiUrl("/api/clientes/listar")),
+      axios.get(buildApiUrl("/api/facturas/reporte?periodo=dia")),
+    ]).then(([invoices, sales, products, customers, today]) => {
+      if (invoices.status === "fulfilled" && invoices.value.data.success) setFacturas(invoices.value.data.facturas || []);
+      if (sales.status === "fulfilled" && sales.value.data.success) setVentas(sales.value.data.ventas || []);
+      if (products.status === "fulfilled" && Array.isArray(products.value.data)) setProductos(products.value.data);
+      if (customers.status === "fulfilled" && customers.value.data.success) setClientes(customers.value.data.clientes || []);
+      if (today.status === "fulfilled" && today.value.data.success) setVentasHoy((today.value.data.facturas || []).reduce((sum, invoice) => sum + Number(invoice.Total || 0), 0));
+    }).finally(() => setLoading(false));
+  }, []);
+
+  const pendientes = facturas.filter((invoice) => /pendiente/i.test(invoice.Estado || invoice.EstadoFactura || "")).length;
+  const displayName = user.Nombre || user.nombre || user.NombreUsuario || "Santiago Muñoz";
+  const today = new Date();
+
+  return <div className="dashboard-page">
+    <header className="dashboard-header"><div className="dashboard-welcome"><span className="welcome-mark">✦</span><div><h1>Bienvenido, {displayName.split(" ")[0]}</h1><p>Aquí tienes un resumen general de tu sistema de facturación.</p></div></div><div className="dashboard-header-actions"><div className="dashboard-date"><span className="header-icon"><Icon name="calendar"/></span><div><strong>{today.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</strong><span>{today.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</span></div></div><button className="header-icon notification-button" aria-label="Notificaciones"><Icon name="bell"/><i /></button><button className="dashboard-avatar" aria-label="Perfil">{initials(displayName)}</button></div></header>
+
+    <section className="dashboard-stats" aria-label="Resumen"><StatCard icon="chart" tone="cyan" label="Ventas de Hoy" value={loading ? "…" : money(ventasHoy)} note="Total facturado hoy"/><StatCard icon="invoice" tone="orange" label="Facturas Pendientes" value={loading ? "…" : pendientes || "—"} note={pendientes ? "Por gestionar" : "Estado no disponible"}/><StatCard icon="box" tone="purple" label="Productos Registrados" value={loading ? "…" : productos.length} note="En inventario"/><StatCard icon="users" tone="green" label="Clientes Registrados" value={loading ? "…" : clientes.length} note="En tu sistema"/></section>
+
+    <section className="dashboard-main-grid"><article className="dashboard-panel sales-panel"><div className="panel-heading"><div className="panel-title"><span className="panel-icon cyan"><Icon name="chart"/></span><div><h2>Ventas Mensuales</h2><p>Comparativo de ventas de los últimos meses</p></div></div><span className="period-pill">Últimos meses</span></div><SalesChart sales={ventas}/><div className="chart-legend"><i/>Ventas</div></article>
+      <article className="dashboard-panel invoices-panel"><div className="panel-heading"><div className="panel-title"><span className="panel-icon purple"><Icon name="invoice"/></span><h2>Últimas Facturas</h2></div><button className="panel-link" onClick={() => navigate("/reportes")}>Ver todas →</button></div><div className="dashboard-table-scroll"><table className="dashboard-table"><thead><tr><th>#</th><th>Cliente</th><th>Fecha</th><th>Total</th></tr></thead><tbody>{!loading && facturas.length === 0 ? <tr><td colSpan="4" className="table-empty">No hay facturas registradas.</td></tr> : facturas.map((invoice) => <tr key={invoice.IdFactura}><td className="invoice-id">#{invoice.IdFactura}</td><td>{invoice.NombreCliente || "Cliente"}</td><td>{shortDate(invoice.Fecha)}</td><td className="invoice-total">{money(invoice.Total)}</td></tr>)}</tbody></table></div></article></section>
+
+    <section className="dashboard-bottom-grid"><article className="dashboard-panel"><div className="panel-heading"><div className="panel-title"><span className="panel-icon purple"><Icon name="box"/></span><h2>Productos Registrados</h2></div><button className="panel-link" onClick={() => navigate("/productos")}>Ver todos →</button></div><div className="dashboard-table-scroll"><table className="dashboard-table product-table"><thead><tr><th>Referencia</th><th>Producto</th><th>Talla</th><th>Precio</th></tr></thead><tbody>{productos.slice(0, 4).map((product, i) => <tr key={product.IdProducto || product.Referencia || i}><td className="product-number">{product.Referencia || product.IdProducto || i + 1}</td><td>{product.Descripcion || "Producto"}</td><td>{product.Talla || "—"}</td><td className="invoice-total">{money(product.PrecioVenta)}</td></tr>)}{!loading && productos.length === 0 && <tr><td colSpan="4" className="table-empty">No hay productos registrados.</td></tr>}</tbody></table></div></article>
+      <article className="dashboard-panel"><div className="panel-heading"><div className="panel-title"><span className="panel-icon green"><Icon name="users"/></span><h2>Clientes Recientes</h2></div><button className="panel-link" onClick={() => navigate("/clientes")}>Ver todos →</button></div><div className="dashboard-table-scroll"><table className="dashboard-table customers-table"><thead><tr><th>Cliente</th><th>Email</th><th>Ciudad</th></tr></thead><tbody>{clientes.slice(0, 4).map((client, i) => <tr key={client.Documento || client.IdCliente || i}><td>{client.Nombre || "Cliente"}</td><td>{client.Correo || "—"}</td><td>{client.Ciudad || "—"}</td></tr>)}{!loading && clientes.length === 0 && <tr><td colSpan="3" className="table-empty">No hay clientes registrados.</td></tr>}</tbody></table></div></article></section>
+  </div>;
+}
+
+function StatCard({ icon, tone, label, value, note }) {
+  return <article className={`stat-card ${tone}`}><span className="stat-icon"><Icon name={icon} size={25}/></span><div className="stat-copy"><span className="stat-label">{label}</span><strong>{value}</strong><span className="stat-note">{note}</span></div></article>;
+}
