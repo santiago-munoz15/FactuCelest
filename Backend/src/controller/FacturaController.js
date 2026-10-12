@@ -77,6 +77,7 @@ const FacturaController = {
         MetodoPago = "Efectivo",
         NombreVendedor = null,
         TelefonoVendedor = null,
+        Observaciones = null,
         Detalle = [],
       } = req.body;
 
@@ -116,6 +117,7 @@ const FacturaController = {
         MetodoPago,
         NombreVendedor,
         TelefonoVendedor,
+        Observaciones,
         Detalle,
       });
 
@@ -238,6 +240,7 @@ const FacturaController = {
         MetodoPago = "Efectivo",
         NombreVendedor = null,
         TelefonoVendedor = null,
+        Observaciones = null,
         Detalle = [],
       } = req.body;
 
@@ -257,6 +260,7 @@ const FacturaController = {
         MetodoPago,
         NombreVendedor,
         TelefonoVendedor,
+        Observaciones,
         Detalle,
       });
 

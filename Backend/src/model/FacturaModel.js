@@ -76,6 +76,7 @@ const FacturaModel = {
         MetodoPago = "Efectivo",
         NombreVendedor = null,
         TelefonoVendedor = null,
+        Observaciones = null,
         Detalle = [],
       } = factura;
 
@@ -92,6 +93,7 @@ const FacturaModel = {
         .input("MetodoPago", sql.VarChar(50), MetodoPago)
         .input("NombreVendedor", sql.VarChar(150), NombreVendedor)
         .input("TelefonoVendedor", sql.VarChar(30), TelefonoVendedor)
+        .input("Observaciones", sql.VarChar(500), Observaciones)
         .query(`
           INSERT INTO Facturas (
             IdClienteFK,
@@ -101,7 +103,8 @@ const FacturaModel = {
             Total,
             MetodoPago,
             NombreVendedor,
-            TelefonoVendedor
+            TelefonoVendedor,
+            Observaciones
           )
           OUTPUT INSERTED.IdFactura
           VALUES (
@@ -112,7 +115,8 @@ const FacturaModel = {
             @Total,
             @MetodoPago,
             @NombreVendedor,
-            @TelefonoVendedor
+            @TelefonoVendedor,
+            @Observaciones
           )
         `);
 
@@ -238,12 +242,13 @@ const FacturaModel = {
           f.MetodoPago,
           f.NombreVendedor,
           f.TelefonoVendedor,
+          f.Observaciones,
           c.Documento AS DocumentoCliente,
           c.Nombre AS NombreCliente,
           c.Telefono AS TelefonoCliente,
           c.Correo AS CorreoCliente,
           c.Direccion AS DireccionCliente,
-          COUNT(df.IdDetalleFactura) AS CantidadProductos,
+          COALESCE(SUM(df.Cantidad), 0) AS CantidadProductos,
           COALESCE(SUM(df.Subtotal), 0) AS TotalDetalle
         FROM Facturas f
         INNER JOIN Clientes c ON f.IdClienteFK = c.Documento
@@ -258,6 +263,7 @@ const FacturaModel = {
           f.MetodoPago,
           f.NombreVendedor,
           f.TelefonoVendedor,
+          f.Observaciones,
           c.Documento,
           c.Nombre,
           c.Telefono,
@@ -290,6 +296,7 @@ const FacturaModel = {
             f.MetodoPago,
             f.NombreVendedor,
             f.TelefonoVendedor,
+            f.Observaciones,
             c.Documento AS DocumentoCliente,
             c.Nombre AS NombreCliente,
             c.Ciudad AS CiudadCliente,
@@ -342,6 +349,7 @@ const FacturaModel = {
         MetodoPago = "Efectivo",
         NombreVendedor = null,
         TelefonoVendedor = null,
+        Observaciones = null,
         Detalle = [],
       } = factura;
 
@@ -359,6 +367,7 @@ const FacturaModel = {
         .input("MetodoPago", sql.VarChar(50), MetodoPago)
         .input("NombreVendedor", sql.VarChar(150), NombreVendedor)
         .input("TelefonoVendedor", sql.VarChar(30), TelefonoVendedor)
+        .input("Observaciones", sql.VarChar(500), Observaciones)
         .query(`
           UPDATE Facturas
           SET
@@ -368,7 +377,8 @@ const FacturaModel = {
             Total = @Total,
             MetodoPago = @MetodoPago,
             NombreVendedor = @NombreVendedor,
-            TelefonoVendedor = @TelefonoVendedor
+            TelefonoVendedor = @TelefonoVendedor,
+            Observaciones = @Observaciones
           WHERE IdFactura = @IdFactura;
         `);
 

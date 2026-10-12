@@ -7,6 +7,7 @@ import {
   showSuccessAlert,
 } from "../utils/sweetAlertHelper";
 import { buildApiUrl } from "../config/api";
+import ReportsDashboard from "../components/ReportsDashboard";
 
 const initialDetalleItem = () => ({
   IdProducto: "",
@@ -88,6 +89,12 @@ function Reportes() {
   const [facturaSeleccionada, setFacturaSeleccionada] = useState(null);
   const [facturaDetalle, setFacturaDetalle] = useState(null);
   const [productos, setProductos] = useState([]);
+  const [vendedores, setVendedores] = useState([]);
+  const [clientes, setClientes] = useState([]);
+  const [facturasHistoricas, setFacturasHistoricas] = useState([]);
+  const [filtroVendedor, setFiltroVendedor] = useState("");
+  const [filtroCliente, setFiltroCliente] = useState("");
+  const [filtroMetodoPago, setFiltroMetodoPago] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
   const [periodo, setPeriodo] = useState("mes");
@@ -100,6 +107,7 @@ function Reportes() {
   const [editorForm, setEditorForm] = useState({
     DocumentoCliente: "",
     MetodoPago: "Efectivo",
+    Observaciones: "",
     Detalle: [initialDetalleItem()],
   });
   const vendedor = useMemo(() => getUsuarioLocal(), []);
@@ -116,6 +124,7 @@ function Reportes() {
   }, []);
 
   const cargarFacturas = useCallback(async () => {
+    if (periodo === "rango" && (!desde || !hasta || desde > hasta)) return;
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -200,10 +209,34 @@ function Reportes() {
 
   useEffect(() => {
     cargarProductos();
+  }, [cargarProductos]);
+
+  useEffect(() => {
     cargarFacturas();
-  }, [cargarFacturas, cargarProductos]);
+  }, [cargarFacturas]);
+
+  useEffect(() => {
+    axios.get(buildApiUrl("/api/vendedores")).then((res) => {
+      if (res.data.success) setVendedores(res.data.vendedores || []);
+    }).catch((error) => console.error("Error al cargar vendedores:", error));
+    axios.get(buildApiUrl("/api/clientes/listar")).then((res) => {
+      if (res.data.success) setClientes(res.data.clientes || []);
+    }).catch((error) => console.error("Error al cargar clientes:", error));
+
+    const hoy = new Date();
+    const inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 3, 1);
+    const comoFechaLocal = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const params = new URLSearchParams({ periodo: "rango", desde: comoFechaLocal(inicio), hasta: comoFechaLocal(hoy) });
+    axios.get(buildApiUrl(`/api/facturas/reporte?${params.toString()}`)).then((res) => {
+      if (res.data.success) setFacturasHistoricas(res.data.facturas || []);
+    }).catch((error) => console.error("Error al cargar el histórico de ventas:", error));
+  }, []);
 
   const handleBuscar = async () => {
+    if (periodo === "rango" && (!desde || !hasta || desde > hasta)) {
+      showInfoAlert("Rango de fechas incompleto", "Selecciona un rango válido para generar el reporte.");
+      return;
+    }
     await cargarFacturas();
   };
 
@@ -245,6 +278,7 @@ function Reportes() {
     setEditorForm({
       DocumentoCliente: facturaCompleta.DocumentoCliente ?? "",
       MetodoPago: facturaCompleta.MetodoPago ?? "Efectivo",
+      Observaciones: facturaCompleta.Observaciones ?? "",
       Detalle:
         facturaCompleta.Detalle?.length > 0
           ? normalizarDetalle(facturaCompleta.Detalle)
@@ -259,6 +293,7 @@ function Reportes() {
     setEditorForm({
       DocumentoCliente: "",
       MetodoPago: "Efectivo",
+      Observaciones: "",
       Detalle: [initialDetalleItem()],
     });
   };
@@ -345,6 +380,7 @@ function Reportes() {
           Iva: totales.iva,
           Total: totales.total,
           MetodoPago: editorForm.MetodoPago,
+          Observaciones: editorForm.Observaciones,
           Detalle: detalleValido,
         }
       );
@@ -668,8 +704,15 @@ function Reportes() {
     }, 250);
   };
 
+  const facturasFiltradas = useMemo(() => facturas.filter((factura) => {
+    const vendedorCoincide = !filtroVendedor || String(factura.NombreVendedor || "") === filtroVendedor;
+    const clienteCoincide = !filtroCliente || String(factura.DocumentoCliente || "") === filtroCliente;
+    const metodoCoincide = !filtroMetodoPago || String(factura.MetodoPago || "").toLocaleLowerCase("es") === filtroMetodoPago.toLocaleLowerCase("es");
+    return vendedorCoincide && clienteCoincide && metodoCoincide;
+  }), [facturas, filtroVendedor, filtroCliente, filtroMetodoPago]);
+
   const resumenActual = useMemo(() => {
-    return facturas.reduce(
+    return facturasFiltradas.reduce(
       (acc, item) => {
         acc.cantidad += 1;
         acc.total += Number(item.Total || 0);
@@ -677,246 +720,87 @@ function Reportes() {
       },
       { cantidad: 0, total: 0 }
     );
-  }, [facturas]);
+  }, [facturasFiltradas]);
 
-  const ventasDiarias = useMemo(() => {
-    const porDia = new Map();
-
-    facturas.forEach((factura) => {
-      const dia = formatDate(factura.Fecha);
-      const actual = porDia.get(dia) || { cantidad: 0, total: 0 };
-      actual.cantidad += 1;
-      actual.total += Number(factura.Total || 0);
-      porDia.set(dia, actual);
+  const ventasPorMes = useMemo(() => {
+    const ahora = new Date();
+    const meses = Array.from({ length: 4 }, (_, index) => {
+      const date = new Date(ahora.getFullYear(), ahora.getMonth() - 3 + index, 1);
+      return { key: `${date.getFullYear()}-${date.getMonth()}`, label: date.toLocaleDateString("es-CO", { month: "short", year: "numeric" }), total: 0 };
     });
+    const porMes = new Map(meses.map((mes) => [mes.key, mes]));
+    facturasHistoricas.forEach((factura) => {
+      if (filtroVendedor && String(factura.NombreVendedor || "") !== filtroVendedor) return;
+      if (filtroCliente && String(factura.DocumentoCliente || "") !== filtroCliente) return;
+      if (filtroMetodoPago && String(factura.MetodoPago || "").toLocaleLowerCase("es") !== filtroMetodoPago.toLocaleLowerCase("es")) return;
+      const date = new Date(factura.Fecha);
+      const mes = porMes.get(`${date.getFullYear()}-${date.getMonth()}`);
+      if (mes) mes.total += Number(factura.Total || 0);
+    });
+    return meses;
+  }, [facturasHistoricas, filtroVendedor, filtroCliente, filtroMetodoPago]);
 
-    return Array.from(porDia.entries()).map(([dia, data]) => ({ dia, ...data }));
-  }, [facturas]);
+  const ventasPorMetodo = useMemo(() => {
+    const totales = new Map();
+    facturasFiltradas.forEach((factura) => {
+      const metodo = factura.MetodoPago || "Sin método";
+      totales.set(metodo, (totales.get(metodo) || 0) + Number(factura.Total || 0));
+    });
+    return [...totales.entries()].map(([metodo, total]) => ({ metodo, total })).sort((a, b) => b.total - a.total);
+  }, [facturasFiltradas]);
+
+  const productosVendidos = useMemo(() => facturasFiltradas.reduce((sum, item) => sum + Number(item.CantidadProductos || 0), 0), [facturasFiltradas]);
+  const clientesAtendidos = useMemo(() => new Set(facturasFiltradas.map((item) => String(item.DocumentoCliente || "")).filter(Boolean)).size, [facturasFiltradas]);
+  const totalMetodos = ventasPorMetodo.reduce((sum, item) => sum + item.total, 0);
+  const donutStops = (() => {
+    const colors = ["#087bf5", "#07bd82", "#8b5cf6", "#f59e0b", "#ef5c78"];
+    let accumulated = 0;
+    const values = ventasPorMetodo.map((item, index) => {
+      const start = accumulated;
+      accumulated += totalMetodos ? item.total / totalMetodos * 100 : 0;
+      return `${colors[index % colors.length]} ${start}% ${accumulated}%`;
+    });
+    return values.length ? `conic-gradient(${values.join(", ")})` : "conic-gradient(#e8eef5 0% 100%)";
+  })();
+
+  const exportarReporte = () => {
+    if (!facturasFiltradas.length) {
+      showInfoAlert("Sin resultados", "Aplica filtros que incluyan facturas para exportar.");
+      return;
+    }
+    const encabezados = ["Factura", "Cliente", "Documento", "Vendedor", "Fecha", "Método de pago", "Total"];
+    const filas = facturasFiltradas.map((factura) => [factura.IdFactura, factura.NombreCliente, factura.DocumentoCliente, factura.NombreVendedor || "", formatDate(factura.Fecha), factura.MetodoPago, factura.Total]);
+    const escaparCsv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const contenido = [encabezados, ...filas].map((fila) => fila.map(escaparCsv).join(",")).join("\r\n");
+    const blob = new Blob(["\ufeff", contenido], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `reporte_facturas_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   const facturaEnVista = facturaDetalle || facturaSeleccionada;
   const resumenEditor = calcularTotales(editorForm.Detalle);
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-900 text-white shadow-2xl overflow-hidden">
-        <div className="p-6 md:p-8 border-b border-white/10">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-            <div>
-              <p className="text-cyan-200 uppercase tracking-[0.3em] text-xs mb-3">
-                Reportería FactuCelest
-              </p>
-              <h1 className="text-3xl md:text-4xl font-black mb-3">
-                Control de facturas, ventas y exportación
-              </h1>
-              <p className="text-slate-200 max-w-3xl">
-                Consulta facturas almacenadas, revisa ventas del día o del mes,
-                edítalas si hubo un error de digitación y descarga cada factura
-                en Excel con el formato de la empresa.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 min-w-[260px]">
-              <div className="rounded-2xl bg-white/10 backdrop-blur border border-white/10 p-4">
-                <p className="text-xs text-cyan-100">Facturas</p>
-                <p className="text-2xl font-bold">{resumenActual.cantidad}</p>
-              </div>
-              <div className="rounded-2xl bg-white/10 backdrop-blur border border-white/10 p-4">
-                <p className="text-xs text-cyan-100">Ventas</p>
-                <p className="text-2xl font-bold">
-                  {formatCurrency(resumenActual.total)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 p-6">
-          <div className="rounded-2xl bg-white/10 backdrop-blur border border-white/10 p-4">
-            <p className="text-sm text-cyan-100 mb-1">Vendedor activo</p>
-            <p className="text-xl font-semibold">{vendedor}</p>
-          </div>
-          <div className="rounded-2xl bg-white/10 backdrop-blur border border-white/10 p-4">
-            <p className="text-sm text-cyan-100 mb-1">Periodo actual</p>
-            <p className="text-xl font-semibold capitalize">
-              {periodo === "rango" ? "Rango personalizado" : periodo}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-white/10 backdrop-blur border border-white/10 p-4">
-            <p className="text-sm text-cyan-100 mb-1">Ventas diarias</p>
-            <p className="text-xl font-semibold">{ventasDiarias.length}</p>
-          </div>
-          <div className="rounded-2xl bg-white/10 backdrop-blur border border-white/10 p-4">
-            <p className="text-sm text-cyan-100 mb-1">Estado</p>
-            <p className="text-xl font-semibold">{loading ? "Cargando" : "Listo"}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-6">
-        <section className="space-y-6">
-          <div className="rounded-3xl bg-white dark:bg-gray-900 shadow-xl border border-gray-100 dark:border-gray-800 p-5 md:p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                  Filtros de consulta
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Filtra por hoy, mes actual, rango o texto libre.
-                </p>
-              </div>
-              <button
-                onClick={handleBuscar}
-                className="app-btn-primary px-5 py-3"
-              >
-                🔎 Buscar
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
-              {[
-                ["todos", "Todas"],
-                ["dia", "Hoy"],
-                ["mes", "Mes actual"],
-                ["rango", "Rango"],
-              ].map(([valor, etiqueta]) => (
-                <button
-                  key={valor}
-                  onClick={() => setPeriodo(valor)}
-                  className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition-all ${
-                    periodo === valor
-                      ? "border-cyan-500 bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300"
-                      : "border-gray-200 bg-gray-50 text-gray-600 hover:border-cyan-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                  }`}
-                >
-                  {etiqueta}
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <input
-                type="text"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar por factura, documento o nombre"
-                className="app-input"
-              />
-              <input
-                type="date"
-                value={desde}
-                onChange={(e) => setDesde(e.target.value)}
-                className="app-input"
-                disabled={periodo !== "rango"}
-              />
-              <input
-                type="date"
-                value={hasta}
-                onChange={(e) => setHasta(e.target.value)}
-                className="app-input"
-                disabled={periodo !== "rango"}
-              />
-            </div>
-          </div>
-
-          <div className="rounded-3xl bg-white dark:bg-gray-900 shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
-            <div className="p-5 md:p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                  Facturas consultadas
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Usa la acción “Ver factura” para consultar el detalle completo.
-                </p>
-              </div>
-              <span className="text-sm text-cyan-600 dark:text-cyan-400 font-semibold">
-                {facturas.length} resultados
-              </span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1050px] text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Factura</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Cliente</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Documento</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Vendedor</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Fecha</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Método</th>
-                    <th className="text-right px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Total</th>
-                    <th className="text-right px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan="8" className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
-                        ⏳ Cargando facturas...
-                      </td>
-                    </tr>
-                  ) : facturas.length === 0 ? (
-                    <tr>
-                      <td colSpan="8" className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
-                        No hay facturas para el filtro seleccionado.
-                      </td>
-                    </tr>
-                  ) : (
-                    facturas.map((factura) => {
-                      return (
-                        <tr
-                          key={factura.IdFactura}
-                          className="border-t border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/70"
-                        >
-                          <td className="px-4 py-3 font-semibold text-gray-800 dark:text-gray-100">#{factura.IdFactura}</td>
-                          <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{factura.NombreCliente}</td>
-                          <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{factura.DocumentoCliente}</td>
-                          <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{factura.NombreVendedor || vendedor}</td>
-                          <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{formatDate(factura.Fecha)}</td>
-                          <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{factura.MetodoPago}</td>
-                          <td className="px-4 py-3 text-right font-bold text-cyan-700 dark:text-cyan-400">
-                            {formatCurrency(factura.Total)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  verFactura(factura);
-                                }}
-                                className="rounded-xl border border-emerald-200 px-3 py-2 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
-                              >
-                                Ver factura
-                              </button>
-                              <button
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  abrirEditor(factura);
-                                }}
-                                className="rounded-xl border border-cyan-200 px-3 py-2 text-cyan-700 hover:bg-cyan-50 dark:border-cyan-900 dark:text-cyan-300 dark:hover:bg-cyan-950/40"
-                              >
-                                Editar
-                              </button>
-                              <button
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  descargarExcel(factura.IdFactura);
-                                }}
-                                className="rounded-xl border border-gray-200 px-3 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-                              >
-                                Excel
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
+    <div className="reports-page">
+      <ReportsDashboard
+        periodo={periodo} setPeriodo={setPeriodo}
+        desde={desde} setDesde={setDesde} hasta={hasta} setHasta={setHasta}
+        filtroVendedor={filtroVendedor} setFiltroVendedor={setFiltroVendedor}
+        filtroCliente={filtroCliente} setFiltroCliente={setFiltroCliente}
+        filtroMetodoPago={filtroMetodoPago} setFiltroMetodoPago={setFiltroMetodoPago}
+        vendedores={vendedores} clientes={clientes} busqueda={busqueda}
+        setBusqueda={setBusqueda} handleBuscar={handleBuscar} loading={loading}
+        facturas={facturasFiltradas} resumen={resumenActual}
+        clientesAtendidos={clientesAtendidos} productosVendidos={productosVendidos}
+        ventasPorMes={ventasPorMes} ventasPorMetodo={ventasPorMetodo}
+        totalMetodos={totalMetodos} donutStops={donutStops}
+        exportar={exportarReporte} formatCurrency={formatCurrency} formatDate={formatDate}
+        verFactura={verFactura} descargarExcel={descargarExcel} abrirEditor={abrirEditor}
+      />
       {showInvoiceModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
@@ -1058,7 +942,6 @@ function Reportes() {
           </div>
         </div>
       )}
-      </div>
 
       {showEditor && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
@@ -1116,6 +999,22 @@ function Reportes() {
                     <option value="Nequi">Nequi</option>
                     <option value="Tarjeta">Tarjeta</option>
                   </select>
+
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mt-4">
+                    Observaciones
+                  </label>
+                  <textarea
+                    maxLength={500}
+                    value={editorForm.Observaciones}
+                    onChange={(e) =>
+                      setEditorForm((actual) => ({
+                        ...actual,
+                        Observaciones: e.target.value,
+                      }))
+                    }
+                    className="app-input min-h-24 resize-y"
+                    placeholder="Observaciones de la factura"
+                  />
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">

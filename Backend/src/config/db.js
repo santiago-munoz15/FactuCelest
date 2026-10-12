@@ -42,6 +42,11 @@ const ensureSchema = async (pool) => {
       ALTER TABLE dbo.Facturas ADD TelefonoVendedor VARCHAR(30) NULL;
     END;
 
+    IF COL_LENGTH('dbo.Facturas', 'Observaciones') IS NULL
+    BEGIN
+      ALTER TABLE dbo.Facturas ADD Observaciones VARCHAR(500) NULL;
+    END;
+
     IF EXISTS (
       SELECT 1
       FROM sys.foreign_keys
