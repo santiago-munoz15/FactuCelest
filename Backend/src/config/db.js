@@ -43,7 +43,11 @@ const ensureSchema = async (pool) => {
 
     IF COL_LENGTH('dbo.Facturas', 'FechaVencimiento') IS NULL
       ALTER TABLE dbo.Facturas ADD FechaVencimiento DATE NULL;
+  `);
 
+  // Ejecuta esto después del ALTER TABLE: SQL Server compila cada lote antes de
+  // ejecutarlo y no reconoce una columna recién agregada dentro del mismo lote.
+  await pool.request().query(`
     UPDATE dbo.Facturas
     SET FechaVencimiento = DATEADD(day, 30, CAST(Fecha AS date))
     WHERE FechaVencimiento IS NULL AND Fecha IS NOT NULL;
