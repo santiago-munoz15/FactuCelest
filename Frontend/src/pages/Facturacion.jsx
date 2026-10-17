@@ -513,8 +513,7 @@ export default function Facturacion() {
                   <div class="value">${escaparHtml(correoCliente || "No registrado")}</div>
                 </div>
                 <div>
-                  <div class="label">Vendedor / Método de pago</div>
-                  <div class="value">${escaparHtml(factura.NombreVendedor || vendedorNombre || "")} · ${escaparHtml(factura.MetodoPago || metodoPago || "")}</div>
+                  <div class="label">Vendedor / condición de pago</div><div class="value">${escaparHtml(factura.NombreVendedor || vendedorNombre || "")} · ${escaparHtml(factura.CondicionPago === "Contado" ? "Contado" : factura.CondicionPago === "Credito30Dias" ? "Crédito a 30 días" : "No especificada")} · Medio: ${escaparHtml(factura.MetodoPago || metodoPago || "")} · Vence: ${factura.FechaVencimiento ? new Date(factura.FechaVencimiento).toLocaleDateString("es-CO") : "—"}</div>
                 </div>
               </div>
 

@@ -671,8 +671,7 @@ function Reportes() {
                 <div class="value">${escaparHtml(factura.CorreoCliente || "No registrado")}</div>
               </div>
               <div>
-                <div class="label">Vendedor / Método de pago</div>
-                <div class="value">${escaparHtml(factura.NombreVendedor || vendedor || "")} · ${escaparHtml(factura.MetodoPago || "")}</div>
+                <div class="label">Vendedor / condición de pago</div><div class="value">${escaparHtml(factura.NombreVendedor || vendedor || "")} · ${escaparHtml(factura.CondicionPago === "Contado" ? "Contado" : factura.CondicionPago === "Credito30Dias" ? "Crédito a 30 días" : "No especificada")} · Medio: ${escaparHtml(factura.MetodoPago || "")} · Vence: ${escaparHtml(formatDate(factura.FechaVencimiento))}</div>
               </div>
             </div>
 
@@ -883,7 +882,7 @@ function Reportes() {
                         Factura #{facturaEnVista.IdFactura}
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {formatDate(facturaEnVista.Fecha)} · {facturaEnVista.MetodoPago}
+                        {formatDate(facturaEnVista.Fecha)} · {facturaEnVista.CondicionPago === "Contado" ? "Contado" : facturaEnVista.CondicionPago === "Credito30Dias" ? "Crédito a 30 días" : facturaEnVista.MetodoPago} · Vence {formatDate(facturaEnVista.FechaVencimiento)}
                       </p>
                     </div>
                     <div className="text-right text-sm text-gray-500 dark:text-gray-400">
