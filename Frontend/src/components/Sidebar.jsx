@@ -9,6 +9,7 @@ const menu = [
   { to: "/clientes", label: "Clientes", icon: "♧" },
   { to: "/productos", label: "Productos", icon: "⬡" },
   { to: "/proveedores", label: "Proveedores", icon: "▱" },
+  { to: "/categorias", label: "Categorías", icon: "◇" },
   { to: "/pagos", label: "Pagos", icon: "$" },
   { to: "/reportes", label: "Reportes", icon: "▥" },
   { to: "/comisiones", label: "Comisiones", icon: "%" },

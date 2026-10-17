@@ -10,6 +10,7 @@ import Proveedores from "./pages/Proveedores";
 import Pagos from "./pages/Pagos";
 import Reportes from "./pages/Reportes";
 import Comisiones from "./pages/Comisiones";
+import Categorias from "./pages/Categorias";
 
 function App() {
   return (
@@ -55,6 +56,8 @@ function App() {
               </MainLayout>
             }
           />
+
+          <Route path="/categorias" element={<MainLayout><Categorias /></MainLayout>} />
 
           <Route
             path="/proveedores"
