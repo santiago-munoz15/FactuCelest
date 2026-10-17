@@ -26,22 +26,26 @@ const ensureSchema = async (pool) => {
 
     IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Clientes') AND name = 'Documento' AND TYPE_NAME(user_type_id) <> 'varchar')
     BEGIN
-      DECLARE @fkName sysname, @dropFk nvarchar(max);
+      DECLARE @fkName sysname, @parentId int, @dropFk nvarchar(max);
       DECLARE fk_cursor CURSOR LOCAL FAST_FORWARD FOR
-        SELECT name FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('dbo.Clientes');
+        SELECT name, parent_object_id FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('dbo.Clientes');
       OPEN fk_cursor;
-      FETCH NEXT FROM fk_cursor INTO @fkName;
+      FETCH NEXT FROM fk_cursor INTO @fkName, @parentId;
       WHILE @@FETCH_STATUS = 0
       BEGIN
-        SET @dropFk = N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME((SELECT parent_object_id FROM sys.foreign_keys WHERE name = @fkName))) + N'.' + QUOTENAME(OBJECT_NAME((SELECT parent_object_id FROM sys.foreign_keys WHERE name = @fkName))) + N' DROP CONSTRAINT ' + QUOTENAME(@fkName);
+        SET @dropFk = N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(@parentId)) + N'.' + QUOTENAME(OBJECT_NAME(@parentId)) + N' DROP CONSTRAINT ' + QUOTENAME(@fkName);
         EXEC sp_executesql @dropFk;
-        FETCH NEXT FROM fk_cursor INTO @fkName;
+        FETCH NEXT FROM fk_cursor INTO @fkName, @parentId;
       END;
       CLOSE fk_cursor;
       DEALLOCATE fk_cursor;
 
       DECLARE @pkName sysname = (SELECT name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('dbo.Clientes') AND type = 'PK');
-      IF @pkName IS NOT NULL EXEC(N'ALTER TABLE dbo.Clientes DROP CONSTRAINT ' + QUOTENAME(@pkName));
+      IF @pkName IS NOT NULL
+      BEGIN
+        SET @dropFk = N'ALTER TABLE dbo.Clientes DROP CONSTRAINT ' + QUOTENAME(@pkName);
+        EXEC sp_executesql @dropFk;
+      END;
       ALTER TABLE dbo.Clientes ALTER COLUMN Documento VARCHAR(30) NOT NULL;
       IF OBJECT_ID('dbo.Facturas', 'U') IS NOT NULL ALTER TABLE dbo.Facturas ALTER COLUMN IdClienteFK VARCHAR(30) NOT NULL;
       ALTER TABLE dbo.Clientes ADD CONSTRAINT PK_Clientes_Documento PRIMARY KEY (Documento);
