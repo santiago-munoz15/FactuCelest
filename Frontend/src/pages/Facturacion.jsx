@@ -314,10 +314,13 @@ export default function Facturacion() {
           })
         : new Date().toLocaleString("es-CO");
       const documentoCliente = factura.DocumentoCliente || "";
+      const tipoDocumentoCliente = factura.TipoDocumentoCliente || cliente.TipoDocumento || "CC";
       const nombreCliente = factura.NombreCliente || "";
       const direccionCliente = factura.DireccionCliente || "";
+      const departamentoCliente = factura.DepartamentoCliente || "";
       const ciudadCliente = factura.CiudadCliente || "";
       const telefonoCliente = factura.TelefonoCliente || "";
+      const correoCliente = factura.CorreoCliente || "";
 
       const filasDetalle = detalleFactura
         .map(
@@ -487,12 +490,16 @@ export default function Facturacion() {
                   <div class="value">${escaparHtml(nombreCliente)}</div>
                 </div>
                 <div>
-                  <div class="label">C.C / NIT</div>
+                  <div class="label">${escaparHtml(tipoDocumentoCliente)}</div>
                   <div class="value">${escaparHtml(documentoCliente)}</div>
                 </div>
                 <div>
                   <div class="label">Dirección</div>
                   <div class="value">${escaparHtml(direccionCliente || "No registrada")}</div>
+                </div>
+                <div>
+                  <div class="label">Departamento</div>
+                  <div class="value">${escaparHtml(departamentoCliente || "No registrado")}</div>
                 </div>
                 <div>
                   <div class="label">Ciudad</div>
@@ -501,6 +508,10 @@ export default function Facturacion() {
                 <div>
                   <div class="label">Teléfono</div>
                   <div class="value">${escaparHtml(telefonoCliente || "No registrado")}</div>
+                </div>
+                <div>
+                  <div class="label">Correo</div>
+                  <div class="value">${escaparHtml(correoCliente || "No registrado")}</div>
                 </div>
                 <div>
                   <div class="label">Vendedor / Método de pago</div>

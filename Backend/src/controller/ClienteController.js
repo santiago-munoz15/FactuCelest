@@ -1,134 +1,55 @@
 import ClienteModel from "../model/ClienteModel.js";
 
-const ClienteController = {
-  // 🔹 Listar clientes
-  listarClientes: async (_req, res) => {
-    try {
-      const clientes = await ClienteModel.listar();
-      res.status(200).json({ success: true, clientes });
-    } catch (err) {
-      console.error("❌ Error al listar clientes:", err);
-      res.status(500).json({ success: false, error: "Error en el servidor" });
-    }
-  },
+const documentoValido = (tipo, documento) => tipo === "CC"
+  ? /^\d+$/.test(documento)
+  : tipo === "NIT" && /^\d+-\d$/.test(documento);
 
-  // 🔹 Buscar cliente por documento o nombre
+const ClienteController = {
+  listarClientes: async (_req, res) => {
+    try { return res.status(200).json({ success: true, clientes: await ClienteModel.listar() }); }
+    catch (err) { console.error("Error al listar clientes:", err); return res.status(500).json({ success: false, error: "Error en el servidor" }); }
+  },
   buscarCliente: async (req, res) => {
     try {
       const { documento } = req.params;
       const { nombre } = req.query;
-
-      if (nombre && nombre.trim()) {
+      if (nombre?.trim()) {
         const clientes = await ClienteModel.buscarPorNombre(nombre);
-
-        if (!clientes || clientes.length === 0) {
-          return res
-            .status(404)
-            .json({ success: false, message: "⚠️ Cliente no encontrado" });
-        }
-
-        return res.status(200).json({ success: true, data: clientes });
+        return clientes.length ? res.json({ success: true, data: clientes }) : res.status(404).json({ success: false, message: "Cliente no encontrado" });
       }
-
       const cliente = await ClienteModel.buscarPorDocumento(documento);
-
-      if (!cliente) {
-        return res
-          .status(404)
-          .json({ success: false, message: "⚠️ Cliente no encontrado" });
-      }
-
-      res.status(200).json({ success: true, data: cliente });
-    } catch (err) {
-      console.error("❌ Error al buscar cliente:", err);
-      res.status(500).json({ success: false, error: "Error en el servidor" });
-    }
+      return cliente ? res.json({ success: true, data: cliente }) : res.status(404).json({ success: false, message: "Cliente no encontrado" });
+    } catch (err) { console.error("Error al buscar cliente:", err); return res.status(500).json({ success: false, error: "Error en el servidor" }); }
   },
-
-  // 🔹 Actualizar cliente
   actualizarCliente: async (req, res) => {
     try {
-      const { documento } = req.params;
-      const { Nombre, Telefono, Correo, Direccion, Ciudad } = req.body;
-
-      if (!Nombre || !Telefono || !Correo || !Direccion || !Ciudad) {
-        return res
-          .status(400)
-          .json({ success: false, message: "⚠️ Todos los campos son obligatorios" });
-      }
-
-      const resultado = await ClienteModel.actualizar(documento, {
-        Nombre,
-        Telefono,
-        Correo,
-        Direccion,
-        Ciudad,
-      });
-
-      if (!resultado.success) {
-        return res.status(404).json({ success: false, message: resultado.message });
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: resultado.message,
-        data: resultado.cliente,
-      });
-    } catch (err) {
-      console.error("❌ Error al actualizar cliente:", err);
-      res.status(500).json({ success: false, error: "Error en el servidor" });
-    }
+      const { Nombre, Telefono, Correo, Direccion, Departamento, Ciudad } = req.body;
+      if (!String(Nombre ?? "").trim()) return res.status(400).json({ success: false, message: "El nombre es obligatorio" });
+      if (Telefono && !/^\d+$/.test(String(Telefono))) return res.status(400).json({ success: false, message: "El teléfono solo puede contener números" });
+      if (Correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(Correo))) return res.status(400).json({ success: false, message: "El correo no tiene un formato válido" });
+      const resultado = await ClienteModel.actualizar(req.params.documento, { Nombre, Telefono, Correo, Direccion, Departamento, Ciudad });
+      return resultado.success ? res.json({ success: true, message: resultado.message, data: resultado.cliente }) : res.status(404).json({ success: false, message: resultado.message });
+    } catch (err) { console.error("Error al actualizar cliente:", err); return res.status(500).json({ success: false, error: "Error en el servidor" }); }
   },
-
-  // 🔹 Eliminar cliente
   eliminarCliente: async (req, res) => {
     try {
-      const { documento } = req.params;
-
-      const resultado = await ClienteModel.eliminar(documento);
-
-      if (!resultado.success) {
-        return res.status(404).json({ success: false, message: resultado.message });
-      }
-
-      return res.status(200).json({ success: true, message: resultado.message });
-    } catch (err) {
-      console.error("❌ Error al eliminar cliente:", err);
-      res.status(500).json({ success: false, error: "Error en el servidor" });
-    }
+      const resultado = await ClienteModel.eliminar(req.params.documento);
+      return resultado.success ? res.json({ success: true, message: resultado.message }) : res.status(404).json({ success: false, message: resultado.message });
+    } catch (err) { console.error("Error al eliminar cliente:", err); return res.status(500).json({ success: false, error: "Error en el servidor" }); }
   },
-
-  // 🔹 Registrar cliente nuevo
   crearCliente: async (req, res) => {
     try {
-      const { Nombre, Documento, Telefono, Correo, Direccion, Ciudad } = req.body;
-
-      if (!Nombre || !Documento || !Telefono || !Correo || !Direccion || !Ciudad) {
-        return res
-          .status(400)
-          .json({ error: "⚠️ Todos los campos son obligatorios" });
+      const { Nombre, Telefono, Correo, Direccion, Departamento, Ciudad } = req.body;
+      const TipoDocumento = String(req.body.TipoDocumento ?? "").toUpperCase();
+      const Documento = String(req.body.Documento ?? "").trim();
+      if (!String(Nombre ?? "").trim() || String(Nombre).trim().length > 50 || Documento.length > 30 || !documentoValido(TipoDocumento, Documento)) {
+        return res.status(400).json({ success: false, message: "Indica un nombre y un documento válido: cédula numérica o NIT con guion y dígito de verificación" });
       }
-
-      const nuevoCliente = { Nombre, Documento, Telefono, Correo, Direccion, Ciudad };
-
-      const resultado = await ClienteModel.crear(nuevoCliente);
-
-      if (resultado.success) {
-        res.status(201).json({
-          success: true,
-          message: resultado.message,
-          data: resultado.cliente, // Devuelve el cliente con IdCliente
-        });
-      } else {
-        res.status(400).json({
-          success: false,
-          message: resultado.message,
-        });
-      }
-    } catch (err) {
-      console.error("❌ Error al registrar cliente:", err);
-      res.status(500).json({ error: "❌ Error al registrar cliente" });
-    }
+      if (Telefono && !/^\d+$/.test(String(Telefono))) return res.status(400).json({ success: false, message: "El teléfono solo puede contener números" });
+      if (Correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(Correo))) return res.status(400).json({ success: false, message: "El correo no tiene un formato válido" });
+      const resultado = await ClienteModel.crear({ Nombre, TipoDocumento, Documento, Telefono, Correo, Direccion, Departamento, Ciudad });
+      return res.status(201).json({ success: true, message: resultado.message, data: resultado.cliente });
+    } catch (err) { console.error("Error al registrar cliente:", err); return res.status(500).json({ success: false, error: "Error al registrar cliente" }); }
   },
 };
 

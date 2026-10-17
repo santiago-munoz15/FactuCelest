@@ -13,7 +13,9 @@ const PagoModel = {
           GROUP BY IdFacturaFK
         ), Saldos AS (
           SELECT f.IdFactura, f.Fecha, COALESCE(f.FechaVencimiento, DATEADD(day, 30, CAST(f.Fecha AS date))) AS FechaVencimiento,
-            f.Total, f.MetodoPago, c.Documento AS DocumentoCliente, c.Nombre AS NombreCliente,
+            f.Total, f.MetodoPago, c.Documento AS DocumentoCliente, c.TipoDocumento AS TipoDocumentoCliente,
+            c.Nombre AS NombreCliente, c.Telefono AS TelefonoCliente, c.Correo AS CorreoCliente,
+            c.Direccion AS DireccionCliente, c.Departamento AS DepartamentoCliente, c.Ciudad AS CiudadCliente,
             COALESCE(r.MontoPagado, 0) AS MontoPagado, r.UltimoPago,
             CASE WHEN f.Total - COALESCE(r.MontoPagado, 0) <= 0 THEN 'Pagada'
               WHEN COALESCE(f.FechaVencimiento, DATEADD(day, 30, CAST(f.Fecha AS date))) < CAST(GETDATE() AS date) THEN 'Vencida'

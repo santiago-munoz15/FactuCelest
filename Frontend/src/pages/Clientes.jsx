@@ -9,11 +9,13 @@ import {
 import { buildApiUrl } from "../config/api";
 
 const emptyClienteEdit = {
+  TipoDocumento: "CC",
   Documento: "",
   Nombre: "",
   Telefono: "",
   Correo: "",
   Direccion: "",
+  Departamento: "",
   Ciudad: "",
 };
 
@@ -57,10 +59,12 @@ function Clientes() {
     return clientes.filter((cliente) => {
       return (
         String(cliente.Documento || "").toLowerCase().includes(termino) ||
+        String(cliente.TipoDocumento || "").toLowerCase().includes(termino) ||
         String(cliente.Nombre || "").toLowerCase().includes(termino) ||
         String(cliente.Telefono || "").toLowerCase().includes(termino) ||
         String(cliente.Correo || "").toLowerCase().includes(termino) ||
         String(cliente.Direccion || "").toLowerCase().includes(termino) ||
+        String(cliente.Departamento || "").toLowerCase().includes(termino) ||
         String(cliente.Ciudad || "").toLowerCase().includes(termino)
       );
     });
@@ -68,11 +72,13 @@ function Clientes() {
 
   const abrirEdicion = (cliente) => {
     setClienteEdit({
+      TipoDocumento: cliente.TipoDocumento || "CC",
       Documento: cliente.Documento || "",
       Nombre: cliente.Nombre || "",
       Telefono: cliente.Telefono || "",
       Correo: cliente.Correo || "",
       Direccion: cliente.Direccion || "",
+      Departamento: cliente.Departamento || "",
       Ciudad: cliente.Ciudad || "",
     });
     setMostrarModalEditar(true);
@@ -84,10 +90,10 @@ function Clientes() {
   };
 
   const guardarEdicion = async () => {
-    const { Documento, Nombre, Telefono, Correo, Direccion, Ciudad } = clienteEdit;
+    const { Documento, Nombre, Telefono, Correo, Direccion, Departamento, Ciudad } = clienteEdit;
 
-    if (!Nombre || !Telefono || !Correo || !Direccion || !Ciudad) {
-      showErrorAlert("Campos incompletos", "Todos los campos son obligatorios");
+    if (!Nombre.trim()) {
+      showErrorAlert("Campos incompletos", "El nombre es obligatorio");
       return;
     }
 
@@ -100,6 +106,7 @@ function Clientes() {
           Telefono,
           Correo,
           Direccion,
+          Departamento,
           Ciudad,
         }
       );
@@ -216,11 +223,12 @@ function Clientes() {
             <table className="w-full text-sm">
               <thead className="bg-slate-950 text-white">
                 <tr>
-                  <th className="px-4 py-4 text-left font-semibold">Documento</th>
+                  <th className="px-4 py-4 text-left font-semibold">Tipo / documento</th>
                   <th className="px-4 py-4 text-left font-semibold">Nombre</th>
                   <th className="px-4 py-4 text-left font-semibold">Teléfono</th>
                   <th className="px-4 py-4 text-left font-semibold">Correo</th>
                   <th className="px-4 py-4 text-left font-semibold">Dirección</th>
+                  <th className="px-4 py-4 text-left font-semibold">Departamento</th>
                   <th className="px-4 py-4 text-left font-semibold">Ciudad</th>
                   <th className="px-4 py-4 text-center font-semibold">Acciones</th>
                 </tr>
@@ -231,11 +239,12 @@ function Clientes() {
                     key={cliente.Documento}
                     className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/60 transition-colors"
                   >
-                    <td className="px-4 py-4 text-gray-800 dark:text-gray-100 font-medium">{cliente.Documento}</td>
+                    <td className="px-4 py-4 text-gray-800 dark:text-gray-100 font-medium">{cliente.TipoDocumento || "CC"}: {cliente.Documento}</td>
                     <td className="px-4 py-4 text-gray-700 dark:text-gray-200">{cliente.Nombre}</td>
                     <td className="px-4 py-4 text-gray-700 dark:text-gray-200">{cliente.Telefono || "-"}</td>
                     <td className="px-4 py-4 text-gray-700 dark:text-gray-200">{cliente.Correo || "-"}</td>
                     <td className="px-4 py-4 text-gray-700 dark:text-gray-200">{cliente.Direccion || "-"}</td>
+                    <td className="px-4 py-4 text-gray-700 dark:text-gray-200">{cliente.Departamento || "-"}</td>
                     <td className="px-4 py-4 text-gray-700 dark:text-gray-200">{cliente.Ciudad || "-"}</td>
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-2">
@@ -265,7 +274,7 @@ function Clientes() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-bold text-gray-800 dark:text-gray-100">{cliente.Nombre}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{cliente.Documento}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{cliente.TipoDocumento || "CC"}: {cliente.Documento}</p>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <button
@@ -286,6 +295,7 @@ function Clientes() {
                   <p><span className="font-semibold">Teléfono:</span> {cliente.Telefono || "-"}</p>
                   <p><span className="font-semibold">Correo:</span> {cliente.Correo || "-"}</p>
                   <p><span className="font-semibold">Dirección:</span> {cliente.Direccion || "-"}</p>
+                  <p><span className="font-semibold">Departamento:</span> {cliente.Departamento || "-"}</p>
                   <p><span className="font-semibold">Ciudad:</span> {cliente.Ciudad || "-"}</p>
                 </div>
               </div>
@@ -331,6 +341,7 @@ function Clientes() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Tipo de documento</label><input value={clienteEdit.TipoDocumento === "NIT" ? "NIT" : "Cédula de ciudadanía"} readOnly className="app-input bg-gray-100 dark:bg-gray-800" /></div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Documento
@@ -393,6 +404,10 @@ function Clientes() {
                   }
                   className="app-input"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Departamento</label>
+                <input type="text" value={clienteEdit.Departamento} onChange={(e) => setClienteEdit((actual) => ({ ...actual, Departamento: e.target.value }))} className="app-input" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">

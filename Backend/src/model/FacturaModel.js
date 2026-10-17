@@ -90,7 +90,7 @@ const FacturaModel = {
 
       const facturaCreada = await transaction
         .request()
-        .input("DocumentoCliente", sql.BigInt, DocumentoCliente)
+        .input("DocumentoCliente", sql.VarChar(30), String(DocumentoCliente))
         .input("Subtotal", sql.Decimal(18, 2), Subtotal)
         .input("Impuesto", sql.Decimal(18, 2), Iva)
         .input("Total", sql.Decimal(18, 2), Total)
@@ -260,7 +260,8 @@ const FacturaModel = {
           COALESCE(f.FechaVencimiento, DATEADD(day, 30, CAST(f.Fecha AS date))) AS FechaVencimiento,
           f.Subtotal, f.Impuesto, f.Total, f.MetodoPago, f.NombreVendedor, f.TelefonoVendedor, f.Observaciones,
           c.Documento AS DocumentoCliente, c.Nombre AS NombreCliente, c.Telefono AS TelefonoCliente,
-          c.Correo AS CorreoCliente, c.Direccion AS DireccionCliente,
+          c.TipoDocumento AS TipoDocumentoCliente, c.Correo AS CorreoCliente, c.Direccion AS DireccionCliente,
+          c.Departamento AS DepartamentoCliente, c.Ciudad AS CiudadCliente,
           COALESCE(d.CantidadProductos, 0) AS CantidadProductos, COALESCE(d.TotalDetalle, 0) AS TotalDetalle,
           COALESCE(p.MontoPagado, 0) AS MontoPagado,
           CASE WHEN f.Total - COALESCE(p.MontoPagado, 0) < 0 THEN 0 ELSE f.Total - COALESCE(p.MontoPagado, 0) END AS Saldo,
@@ -313,6 +314,8 @@ const FacturaModel = {
               WHEN COALESCE(pagos.MontoPagado, 0) > 0 THEN 'Abonada' ELSE 'Pendiente' END AS Estado,
             c.Documento AS DocumentoCliente,
             c.Nombre AS NombreCliente,
+            c.TipoDocumento AS TipoDocumentoCliente,
+            c.Departamento AS DepartamentoCliente,
             c.Ciudad AS CiudadCliente,
             c.Telefono AS TelefonoCliente,
             c.Correo AS CorreoCliente,
@@ -393,7 +396,7 @@ const FacturaModel = {
       const updateResult = await transaction
         .request()
         .input("IdFactura", sql.BigInt, idFactura)
-        .input("DocumentoCliente", sql.BigInt, DocumentoCliente)
+        .input("DocumentoCliente", sql.VarChar(30), String(DocumentoCliente))
         .input("Subtotal", sql.Decimal(18, 2), Subtotal)
         .input("Impuesto", sql.Decimal(18, 2), Iva)
         .input("Total", sql.Decimal(18, 2), Total)

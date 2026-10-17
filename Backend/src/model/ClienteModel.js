@@ -1,211 +1,72 @@
 import { getConnection, sql } from "../config/db.js";
 
+const columnas = "Documento, TipoDocumento, Nombre, Telefono, Correo, Direccion, Departamento, Ciudad";
 const ClienteModel = {
-  // 🔹 Listar todos los clientes
   listar: async () => {
-    try {
-      const pool = await getConnection();
-      const result = await pool
-        .request()
-        .query("SELECT Documento, Nombre, Telefono, Correo, Direccion, Ciudad FROM Clientes");
-      return result.recordset;
-    } catch (error) {
-      console.error("❌ Error al listar clientes:", error);
-      throw error;
-    }
+    const pool = await getConnection();
+    const result = await pool.request().query(`SELECT ${columnas} FROM dbo.Clientes ORDER BY Nombre`);
+    return result.recordset;
   },
-
-  // 🔹 Buscar cliente por documento
   buscarPorDocumento: async (documento) => {
-    try {
-      const pool = await getConnection();
-      const result = await pool
-        .request()
-        .input("Documento", sql.BigInt, documento)
-        .query(`
-          SELECT
-            Documento,
-            Nombre,
-            Telefono,
-            Correo,
-            Direccion,
-            Ciudad
-          FROM Clientes
-          WHERE Documento = @Documento
-        `);
-
-      return result.recordset[0]; // devuelve solo 1 cliente con IdCliente, Nombre, etc.
-    } catch (error) {
-      console.error("❌ Error al buscar cliente:", error);
-      throw error;
-    }
+    const pool = await getConnection();
+    const result = await pool.request().input("Documento", sql.VarChar(30), documento)
+      .query(`SELECT ${columnas} FROM dbo.Clientes WHERE Documento = @Documento`);
+    return result.recordset[0];
   },
-
-  // 🔹 Buscar clientes por nombre
   buscarPorNombre: async (nombre) => {
-    try {
-      const pool = await getConnection();
-      const filtro = nombre.trim();
-
-      const result = await pool
-        .request()
-        .input("Nombre", sql.VarChar(150), filtro)
-        .query(`
-          SELECT
-            Documento,
-            Nombre,
-            Telefono,
-            Correo,
-            Direccion,
-            Ciudad
-          FROM Clientes
-          WHERE Nombre LIKE @Nombre + '%'
-          ORDER BY Nombre ASC
-        `);
-
-      return result.recordset;
-    } catch (error) {
-      console.error("❌ Error al buscar clientes por nombre:", error);
-      throw error;
-    }
+    const pool = await getConnection();
+    const result = await pool.request().input("Nombre", sql.VarChar(150), nombre.trim())
+      .query(`SELECT ${columnas} FROM dbo.Clientes WHERE Nombre LIKE @Nombre + '%' ORDER BY Nombre`);
+    return result.recordset;
   },
-
-  // 🔹 Actualizar cliente
   actualizar: async (documento, data) => {
-    try {
-      const pool = await getConnection();
-      const { Nombre, Telefono, Correo, Direccion, Ciudad } = data;
-
-      const result = await pool
-        .request()
-        .input("Documento", sql.BigInt, documento)
-        .input("Nombre", sql.VarChar, Nombre)
-        .input("Telefono", sql.BigInt, Telefono)
-        .input("Correo", sql.VarChar, Correo)
-        .input("Direccion", sql.VarChar, Direccion)
-        .input("Ciudad", sql.VarChar, Ciudad)
-        .query(`
-          UPDATE Clientes
-          SET Nombre = @Nombre,
-              Telefono = @Telefono,
-              Correo = @Correo,
-              Direccion = @Direccion,
-              Ciudad = @Ciudad
-          WHERE Documento = @Documento;
-
-          SELECT Documento, Nombre, Telefono, Correo, Direccion, Ciudad
-          FROM Clientes
-          WHERE Documento = @Documento;
-        `);
-
-      const clienteActualizado = result.recordset[0];
-
-      if (!clienteActualizado) {
-        return { success: false, message: "⚠️ Cliente no encontrado" };
-      }
-
-      return {
-        success: true,
-        message: "✅ Cliente actualizado correctamente.",
-        cliente: clienteActualizado,
-      };
-    } catch (error) {
-      console.error("❌ Error al actualizar cliente:", error);
-      return {
-        success: false,
-        message: "❌ Error interno al actualizar cliente.",
-      };
-    }
+    const pool = await getConnection();
+    const result = await pool.request()
+      .input("Documento", sql.VarChar(30), documento)
+      .input("Nombre", sql.VarChar(50), data.Nombre)
+      .input("Telefono", sql.BigInt, data.Telefono ? Number(data.Telefono) : null)
+      .input("Correo", sql.VarChar(100), data.Correo || null)
+      .input("Direccion", sql.VarChar(150), data.Direccion || null)
+      .input("Departamento", sql.VarChar(100), data.Departamento || null)
+      .input("Ciudad", sql.VarChar(100), data.Ciudad || null)
+      .query(`UPDATE dbo.Clientes SET Nombre = @Nombre, Telefono = @Telefono, Correo = @Correo,
+        Direccion = @Direccion, Departamento = @Departamento, Ciudad = @Ciudad WHERE Documento = @Documento;
+        SELECT ${columnas} FROM dbo.Clientes WHERE Documento = @Documento`);
+    const cliente = result.recordset[0];
+    return cliente ? { success: true, message: "Cliente actualizado correctamente", cliente }
+      : { success: false, message: "Cliente no encontrado" };
   },
-
-  // 🔹 Eliminar cliente
   eliminar: async (documento) => {
-    try {
-      const pool = await getConnection();
-      const result = await pool
-        .request()
-        .input("Documento", sql.BigInt, documento)
-        .query(`DELETE FROM Clientes WHERE Documento = @Documento;`);
-
-      return {
-        success: result.rowsAffected[0] > 0,
-        message:
-          result.rowsAffected[0] > 0
-            ? "✅ Cliente eliminado correctamente."
-            : "⚠️ Cliente no encontrado.",
-      };
-    } catch (error) {
-      console.error("❌ Error al eliminar cliente:", error);
-      return {
-        success: false,
-        message: "❌ Error interno al eliminar cliente.",
-      };
-    }
+    const pool = await getConnection();
+    const result = await pool.request().input("Documento", sql.VarChar(30), documento)
+      .query("DELETE FROM dbo.Clientes WHERE Documento = @Documento");
+    const success = result.rowsAffected[0] > 0;
+    return { success, message: success ? "Cliente eliminado correctamente" : "Cliente no encontrado" };
   },
-
-  // 🔹 Crear cliente
   crear: async (data) => {
-    try {
-      const pool = await getConnection();
-      const { Documento, Nombre, Telefono, Correo, Direccion, Ciudad } = data;
-
-      const result = await pool
-        .request()
-        .input("Documento", sql.BigInt, Documento)
-        .input("Nombre", sql.VarChar, Nombre)
-        .input("Telefono", sql.BigInt, Telefono)
-        .input("Correo", sql.VarChar, Correo)
-        .input("Direccion", sql.VarChar, Direccion)
-        .input("Ciudad", sql.VarChar, Ciudad)
-        .query(`
-          IF EXISTS (SELECT 1 FROM Clientes WHERE Documento = @Documento)
-          BEGIN
-            UPDATE Clientes
-            SET Nombre = @Nombre,
-                Telefono = @Telefono,
-                Correo = @Correo,
-                Direccion = @Direccion,
-                Ciudad = @Ciudad
-            WHERE Documento = @Documento;
-
-            SELECT Documento, Nombre, Telefono, Correo, Direccion, Ciudad
-            FROM Clientes
-            WHERE Documento = @Documento;
-          END
-          ELSE
-          BEGIN
-            INSERT INTO Clientes (Documento, Nombre, Telefono, Correo, Direccion, Ciudad)
-            VALUES (@Documento, @Nombre, @Telefono, @Correo, @Direccion, @Ciudad);
-
-            SELECT Documento, Nombre, Telefono, Correo, Direccion, Ciudad
-            FROM Clientes
-            WHERE Documento = @Documento;
-          END
-        `);
-
-      const clienteCreado = result.recordset[0];
-
-      // Verificar si fue exitoso
-      if (clienteCreado && clienteCreado.Documento > 0) {
-        return {
-          success: true,
-          message: "✅ Cliente registrado correctamente.",
-          cliente: clienteCreado, // Retorna el cliente con Documento
-        };
-      } else {
-        return {
-          success: false,
-          message:
-            clienteCreado?.Mensaje || "⚠️ No se pudo registrar el cliente.",
-        };
-      }
-    } catch (error) {
-      console.error("❌ Error al crear cliente:", error);
-      return {
-        success: false,
-        message: "❌ Error interno al registrar cliente.",
-      };
-    }
+    const pool = await getConnection();
+    const result = await pool.request()
+      .input("Documento", sql.VarChar(30), data.Documento.trim())
+      .input("TipoDocumento", sql.VarChar(10), data.TipoDocumento)
+      .input("Nombre", sql.VarChar(50), data.Nombre.trim())
+      .input("Telefono", sql.BigInt, data.Telefono ? Number(data.Telefono) : null)
+      .input("Correo", sql.VarChar(100), data.Correo?.trim() || null)
+      .input("Direccion", sql.VarChar(150), data.Direccion?.trim() || null)
+      .input("Departamento", sql.VarChar(100), data.Departamento?.trim() || null)
+      .input("Ciudad", sql.VarChar(100), data.Ciudad?.trim() || null)
+      .query(`IF EXISTS (SELECT 1 FROM dbo.Clientes WHERE Documento = @Documento)
+        BEGIN
+          UPDATE dbo.Clientes SET TipoDocumento = @TipoDocumento, Nombre = @Nombre, Telefono = @Telefono,
+            Correo = @Correo, Direccion = @Direccion, Departamento = @Departamento, Ciudad = @Ciudad
+          WHERE Documento = @Documento;
+        END
+        ELSE
+        BEGIN
+          INSERT INTO dbo.Clientes (Documento, TipoDocumento, Nombre, Telefono, Correo, Direccion, Departamento, Ciudad)
+          VALUES (@Documento, @TipoDocumento, @Nombre, @Telefono, @Correo, @Direccion, @Departamento, @Ciudad);
+        END
+        SELECT ${columnas} FROM dbo.Clientes WHERE Documento = @Documento`);
+    return { success: true, message: "Cliente registrado correctamente", cliente: result.recordset[0] };
   },
 };
 

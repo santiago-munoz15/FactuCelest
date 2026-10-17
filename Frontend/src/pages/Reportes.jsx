@@ -651,12 +651,16 @@ function Reportes() {
                 <div class="value">${escaparHtml(factura.NombreCliente || "")}</div>
               </div>
               <div>
-                <div class="label">C.C / NIT</div>
+                <div class="label">${escaparHtml(factura.TipoDocumentoCliente || "CC")}</div>
                 <div class="value">${escaparHtml(factura.DocumentoCliente || "")}</div>
               </div>
               <div>
                 <div class="label">Dirección</div>
                 <div class="value">${escaparHtml(factura.DireccionCliente || "No registrada")}</div>
+              </div>
+              <div>
+                <div class="label">Departamento</div>
+                <div class="value">${escaparHtml(factura.DepartamentoCliente || "No registrado")}</div>
               </div>
               <div>
                 <div class="label">Ciudad</div>
@@ -665,6 +669,10 @@ function Reportes() {
               <div>
                 <div class="label">Teléfono</div>
                 <div class="value">${escaparHtml(factura.TelefonoCliente || "No registrado")}</div>
+              </div>
+              <div>
+                <div class="label">Correo</div>
+                <div class="value">${escaparHtml(factura.CorreoCliente || "No registrado")}</div>
               </div>
               <div>
                 <div class="label">Vendedor / Método de pago</div>
@@ -894,8 +902,10 @@ function Reportes() {
                     <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-3">
                       <p className="text-gray-500 dark:text-gray-400">Cliente</p>
                       <p className="font-semibold text-gray-800 dark:text-gray-100">{facturaEnVista.NombreCliente}</p>
-                      <p className="text-gray-600 dark:text-gray-300">{facturaEnVista.DocumentoCliente}</p>
+                      <p className="text-gray-600 dark:text-gray-300">{facturaEnVista.TipoDocumentoCliente || "CC"}: {facturaEnVista.DocumentoCliente}</p>
                       <p className="text-gray-600 dark:text-gray-300">{facturaEnVista.DireccionCliente}</p>
+                      <p className="text-gray-600 dark:text-gray-300">{facturaEnVista.DepartamentoCliente} {facturaEnVista.CiudadCliente && `· ${facturaEnVista.CiudadCliente}`}</p>
+                      <p className="text-gray-600 dark:text-gray-300">{facturaEnVista.TelefonoCliente || "Sin teléfono"} · {facturaEnVista.CorreoCliente || "Sin correo"}</p>
                     </div>
                     <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-3">
                       <p className="text-gray-500 dark:text-gray-400">Vendedor</p>
