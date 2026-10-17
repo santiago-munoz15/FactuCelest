@@ -22,6 +22,10 @@ const ensureSchema = async (pool) => {
     IF COL_LENGTH('dbo.Clientes', 'Ciudad') IS NULL ALTER TABLE dbo.Clientes ADD Ciudad VARCHAR(100) NULL;
     IF COL_LENGTH('dbo.Clientes', 'Departamento') IS NULL ALTER TABLE dbo.Clientes ADD Departamento VARCHAR(100) NULL;
     IF COL_LENGTH('dbo.Clientes', 'TipoDocumento') IS NULL ALTER TABLE dbo.Clientes ADD TipoDocumento VARCHAR(10) NULL;
+  `);
+
+  // SQL Server compila cada lote antes de aplicar los ALTER TABLE anteriores.
+  await pool.request().query(`
     UPDATE dbo.Clientes SET TipoDocumento = 'CC' WHERE TipoDocumento IS NULL;
 
     IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Clientes') AND name = 'Documento' AND TYPE_NAME(user_type_id) <> 'varchar')
