@@ -16,6 +16,7 @@ export default function FacturacionForm(props) {
     productos, handleAgregarProducto, detalle, handleCantidadChange,
     handleDescuentoChange, handleEliminarProducto,
     observaciones, setObservaciones, totales, handleGenerarFactura,
+    condicionPago, setCondicionPago, abonoInicial, setAbonoInicial, metodoPago, setMetodoPago,
   } = props;
   const vendedorSeleccionado = vendedores.find((item) => item.Nombre === vendedorNombre);
 

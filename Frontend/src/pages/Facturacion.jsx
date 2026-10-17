@@ -50,7 +50,9 @@ export default function Facturacion() {
   const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
   const [resultadosCliente, setResultadosCliente] = useState([]);
   const [resultadosVendedor, setResultadosVendedor] = useState([]);
-  const [metodoPago, setMetodoPago] = useState("Crédito 30 días");
+  const [metodoPago, setMetodoPago] = useState("Efectivo");
+  const [condicionPago, setCondicionPago] = useState("Credito30Dias");
+  const [abonoInicial, setAbonoInicial] = useState("");
   const [observaciones, setObservaciones] = useState("");
 
   const [totales, setTotales] = useState({
@@ -571,7 +573,10 @@ export default function Facturacion() {
         DocumentoCliente: cliente.Documento,
         Subtotal: totales.subtotal,
         Total: totales.total,
-        MetodoPago: metodoPago,
+        CondicionPago: condicionPago,
+        AbonoInicial: condicionPago === "Contado" ? totales.total : Number(abonoInicial || 0),
+        MetodoAbono: metodoPago,
+        MetodoPago: condicionPago === "Contado" || Number(abonoInicial) > 0 ? metodoPago : "Crédito 30 días",
         Observaciones: observaciones.trim() || null,
         NombreVendedor: vendedorNombre,
         TelefonoVendedor: vendedorTelefono,
@@ -651,7 +656,9 @@ export default function Facturacion() {
       setVendedorTelefono("");
       setVendedorId(null);
       setDetalle([]);
-      setMetodoPago("Crédito 30 días");
+      setMetodoPago("Efectivo");
+      setCondicionPago("Credito30Dias");
+      setAbonoInicial("");
       setObservaciones("");
       setTotales({ subtotal: 0, total: 0 });
     }
@@ -688,6 +695,10 @@ export default function Facturacion() {
     handleEliminarProducto={handleEliminarProducto}
     metodoPago={metodoPago}
     setMetodoPago={setMetodoPago}
+    condicionPago={condicionPago}
+    setCondicionPago={setCondicionPago}
+    abonoInicial={abonoInicial}
+    setAbonoInicial={setAbonoInicial}
     observaciones={observaciones}
     setObservaciones={setObservaciones}
     totales={totales}

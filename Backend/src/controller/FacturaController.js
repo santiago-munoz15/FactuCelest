@@ -85,6 +85,9 @@ const FacturaController = {
         DocumentoCliente,
         Subtotal,
         Total,
+        CondicionPago = "Credito30Dias",
+        AbonoInicial = 0,
+        MetodoAbono = "Efectivo",
         MetodoPago = "Crédito 30 días",
         NombreVendedor = null,
         TelefonoVendedor = null,
@@ -113,6 +116,14 @@ const FacturaController = {
         });
       }
 
+      const abono = CondicionPago === "Contado" ? Number(Total) : Number(AbonoInicial || 0);
+      if (!["Contado", "Credito30Dias"].includes(CondicionPago) || !Number.isFinite(abono) || abono < 0 || abono > Number(Total)) {
+        return res.status(400).json({ success: false, error: "La condición o el abono inicial no son válidos" });
+      }
+      if (abono > 0 && !["Efectivo", "Transferencia", "Tarjeta", "Nequi", "Daviplata"].includes(MetodoAbono)) {
+        return res.status(400).json({ success: false, error: "Selecciona un medio de pago válido" });
+      }
+
       // Validar que haya productos en el detalle (opcional, según tu lógica)
       if (Detalle.length === 0) {
         console.warn("⚠️ Factura sin productos en el detalle");
@@ -122,7 +133,10 @@ const FacturaController = {
         DocumentoCliente,
         Subtotal,
         Total,
-        MetodoPago,
+        CondicionPago,
+        AbonoInicial: abono,
+        MetodoAbono,
+        MetodoPago: abono > 0 ? MetodoAbono : "Crédito 30 días",
         NombreVendedor,
         TelefonoVendedor,
         Observaciones,

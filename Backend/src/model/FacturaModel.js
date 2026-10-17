@@ -76,6 +76,9 @@ const FacturaModel = {
         DocumentoCliente,
         Subtotal,
         Total,
+        CondicionPago = "Credito30Dias",
+        AbonoInicial = 0,
+        MetodoAbono = "Efectivo",
         MetodoPago = "Crédito 30 días",
         NombreVendedor = null,
         TelefonoVendedor = null,
@@ -84,6 +87,10 @@ const FacturaModel = {
       } = factura;
 
       const detalleNormalizado = normalizarDetalle(Detalle);
+      const montoInicial = CondicionPago === "Contado" ? Number(Total) : Number(AbonoInicial || 0);
+      if (!["Contado", "Credito30Dias"].includes(CondicionPago)) throw new Error("La condición de pago no es válida");
+      if (!Number.isFinite(montoInicial) || montoInicial < 0 || montoInicial > Number(Total)) throw new Error("El abono inicial debe estar entre cero y el total de la factura");
+      if (montoInicial > 0 && !["Efectivo", "Transferencia", "Tarjeta", "Nequi", "Daviplata"].includes(MetodoAbono)) throw new Error("El medio de pago no es válido");
 
       await transaction.begin();
 
@@ -94,6 +101,7 @@ const FacturaModel = {
         .input("Impuesto", sql.Decimal(18, 2), 0)
         .input("Total", sql.Decimal(18, 2), Total)
         .input("MetodoPago", sql.VarChar(50), MetodoPago)
+        .input("CondicionPago", sql.VarChar(20), CondicionPago)
         .input("NombreVendedor", sql.VarChar(150), NombreVendedor)
         .input("TelefonoVendedor", sql.VarChar(30), TelefonoVendedor)
         .input("Observaciones", sql.VarChar(500), Observaciones)
@@ -106,6 +114,7 @@ const FacturaModel = {
             Impuesto,
             Total,
             MetodoPago,
+            CondicionPago,
             NombreVendedor,
             TelefonoVendedor,
             Observaciones
@@ -114,11 +123,12 @@ const FacturaModel = {
           VALUES (
             @DocumentoCliente,
             GETDATE(),
-            DATEADD(day, 30, CAST(GETDATE() AS date)),
+            CASE WHEN @CondicionPago = 'Contado' THEN CAST(GETDATE() AS date) ELSE DATEADD(day, 30, CAST(GETDATE() AS date)) END,
             @Subtotal,
             @Impuesto,
             @Total,
             @MetodoPago,
+            @CondicionPago,
             @NombreVendedor,
             @TelefonoVendedor,
             @Observaciones
@@ -129,6 +139,15 @@ const FacturaModel = {
 
       if (!IdFactura) {
         throw new Error("No fue posible obtener el ID de la factura creada");
+      }
+
+      if (montoInicial > 0) {
+        await transaction.request()
+          .input("IdFacturaFK", sql.BigInt, IdFactura)
+          .input("Monto", sql.Decimal(18, 2), montoInicial)
+          .input("MetodoPago", sql.VarChar(30), MetodoAbono)
+          .query(`INSERT INTO dbo.Pagos (IdFacturaFK, Monto, MetodoPago, Pagador, Observaciones)
+            VALUES (@IdFacturaFK, @Monto, @MetodoPago, NULL, 'Pago inicial al crear la factura')`);
       }
 
       if (detalleNormalizado.length > 0) {
@@ -257,7 +276,7 @@ const FacturaModel = {
         )
         SELECT f.IdFactura, f.Fecha,
           COALESCE(f.FechaVencimiento, DATEADD(day, 30, CAST(f.Fecha AS date))) AS FechaVencimiento,
-          f.Subtotal, f.Impuesto, f.Total, f.MetodoPago, f.NombreVendedor, f.TelefonoVendedor, f.Observaciones,
+          f.Subtotal, f.Impuesto, f.Total, f.MetodoPago, f.CondicionPago, f.NombreVendedor, f.TelefonoVendedor, f.Observaciones,
           c.Documento AS DocumentoCliente, c.Nombre AS NombreCliente, c.Telefono AS TelefonoCliente,
           c.TipoDocumento AS TipoDocumentoCliente, c.Correo AS CorreoCliente, c.Direccion AS DireccionCliente,
           c.Departamento AS DepartamentoCliente, c.Ciudad AS CiudadCliente,
@@ -303,6 +322,7 @@ const FacturaModel = {
             f.Impuesto,
             f.Total,
             f.MetodoPago,
+            f.CondicionPago,
             f.NombreVendedor,
             f.TelefonoVendedor,
             f.Observaciones,

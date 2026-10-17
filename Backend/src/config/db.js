@@ -76,6 +76,9 @@ const ensureSchema = async (pool) => {
     IF COL_LENGTH('dbo.Facturas', 'Observaciones') IS NULL
       ALTER TABLE dbo.Facturas ADD Observaciones VARCHAR(500) NULL;
 
+    IF COL_LENGTH('dbo.Facturas', 'CondicionPago') IS NULL
+      ALTER TABLE dbo.Facturas ADD CondicionPago VARCHAR(20) NULL;
+
     IF COL_LENGTH('dbo.Facturas', 'FechaVencimiento') IS NULL
       ALTER TABLE dbo.Facturas ADD FechaVencimiento DATE NULL;
   `);
