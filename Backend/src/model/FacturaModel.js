@@ -75,7 +75,6 @@ const FacturaModel = {
       const {
         DocumentoCliente,
         Subtotal,
-        Iva,
         Total,
         MetodoPago = "Crédito 30 días",
         NombreVendedor = null,
@@ -92,7 +91,7 @@ const FacturaModel = {
         .request()
         .input("DocumentoCliente", sql.VarChar(30), String(DocumentoCliente))
         .input("Subtotal", sql.Decimal(18, 2), Subtotal)
-        .input("Impuesto", sql.Decimal(18, 2), Iva)
+        .input("Impuesto", sql.Decimal(18, 2), 0)
         .input("Total", sql.Decimal(18, 2), Total)
         .input("MetodoPago", sql.VarChar(50), MetodoPago)
         .input("NombreVendedor", sql.VarChar(150), NombreVendedor)
@@ -372,7 +371,6 @@ const FacturaModel = {
       const {
         DocumentoCliente,
         Subtotal,
-        Iva,
         Total,
         MetodoPago = "Efectivo",
         NombreVendedor = null,
@@ -398,7 +396,7 @@ const FacturaModel = {
         .input("IdFactura", sql.BigInt, idFactura)
         .input("DocumentoCliente", sql.VarChar(30), String(DocumentoCliente))
         .input("Subtotal", sql.Decimal(18, 2), Subtotal)
-        .input("Impuesto", sql.Decimal(18, 2), Iva)
+        .input("Impuesto", sql.Decimal(18, 2), 0)
         .input("Total", sql.Decimal(18, 2), Total)
         .input("MetodoPago", sql.VarChar(50), MetodoPago)
         .input("NombreVendedor", sql.VarChar(150), NombreVendedor)

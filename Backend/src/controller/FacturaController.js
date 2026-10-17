@@ -73,7 +73,6 @@ const construirFilasExcel = (factura, vendedor) => {
 
   filas.push([]);
   filas.push(["Subtotal", "", "", "", "", Number(factura.Subtotal ?? 0)]);
-  filas.push(["Impuesto", "", "", "", "", Number(factura.Impuesto ?? 0)]);
   filas.push(["Total", "", "", "", "", Number(factura.Total ?? 0)]);
 
   return filas;
@@ -85,7 +84,6 @@ const FacturaController = {
       const {
         DocumentoCliente,
         Subtotal,
-        Iva,
         Total,
         MetodoPago = "Crédito 30 días",
         NombreVendedor = null,
@@ -97,7 +95,6 @@ const FacturaController = {
       console.log("📦 Datos recibidos:", {
         DocumentoCliente,
         Subtotal,
-        Iva,
         Total,
         MetodoPago,
         Detalle,
@@ -107,13 +104,12 @@ const FacturaController = {
       if (
         !DocumentoCliente ||
         Subtotal === undefined ||
-        Iva === undefined ||
         Total === undefined
       ) {
         return res.status(400).json({
           success: false,
           error:
-            "Todos los campos son obligatorios (DocumentoCliente, Subtotal, Iva, Total)",
+            "Todos los campos son obligatorios (DocumentoCliente, Subtotal, Total)",
         });
       }
 
@@ -125,7 +121,6 @@ const FacturaController = {
       const result = await FacturaModel.crearFactura({
         DocumentoCliente,
         Subtotal,
-        Iva,
         Total,
         MetodoPago,
         NombreVendedor,
@@ -249,7 +244,6 @@ const FacturaController = {
       const {
         DocumentoCliente,
         Subtotal,
-        Iva,
         Total,
         MetodoPago = "Efectivo",
         NombreVendedor = null,
@@ -258,18 +252,17 @@ const FacturaController = {
         Detalle = [],
       } = req.body;
 
-      if (!DocumentoCliente || Subtotal === undefined || Iva === undefined || Total === undefined) {
+      if (!DocumentoCliente || Subtotal === undefined || Total === undefined) {
         return res.status(400).json({
           success: false,
           error:
-            "Todos los campos son obligatorios (DocumentoCliente, Subtotal, Iva, Total)",
+            "Todos los campos son obligatorios (DocumentoCliente, Subtotal, Total)",
         });
       }
 
       const result = await FacturaModel.actualizarFactura(id, {
         DocumentoCliente,
         Subtotal,
-        Iva,
         Total,
         MetodoPago,
         NombreVendedor,

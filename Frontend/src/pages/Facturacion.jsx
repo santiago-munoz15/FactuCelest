@@ -55,7 +55,6 @@ export default function Facturacion() {
 
   const [totales, setTotales] = useState({
     subtotal: 0,
-    iva: 0,
     total: 0,
   });
 
@@ -283,9 +282,7 @@ export default function Facturacion() {
   // ðŸ”¹ Calcular totales
   useEffect(() => {
     const subtotal = detalle.reduce((acc, p) => acc + Number(p.Total || 0), 0);
-    const iva = subtotal * 0.19;
-    const total = subtotal + iva;
-    setTotales({ subtotal, iva, total });
+    setTotales({ subtotal, total: subtotal });
   }, [detalle]);
 
   // ðŸ”¹ Eliminar producto del detalle
@@ -539,7 +536,6 @@ export default function Facturacion() {
               <div class="totals">
                 <div class="totals-box">
                   <div class="totals-row"><span>Subtotal</span><span>${formatearMoneda(factura.Subtotal || 0)}</span></div>
-                  <div class="totals-row"><span>IVA</span><span>${formatearMoneda(factura.Iva ?? factura.Impuesto ?? 0)}</span></div>
                   <div class="totals-row total"><span>Total</span><span>${formatearMoneda(factura.Total || 0)}</span></div>
                 </div>
               </div>
@@ -574,7 +570,6 @@ export default function Facturacion() {
       const facturaData = {
         DocumentoCliente: cliente.Documento,
         Subtotal: totales.subtotal,
-        Iva: totales.iva,
         Total: totales.total,
         MetodoPago: metodoPago,
         Observaciones: observaciones.trim() || null,
@@ -658,7 +653,7 @@ export default function Facturacion() {
       setDetalle([]);
       setMetodoPago("Crédito 30 días");
       setObservaciones("");
-      setTotales({ subtotal: 0, iva: 0, total: 0 });
+      setTotales({ subtotal: 0, total: 0 });
     }
   };
 

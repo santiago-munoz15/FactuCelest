@@ -58,10 +58,7 @@ const calcularTotales = (detalle = []) => {
     const precio = Number(item.PrecioUnitario || 0);
     return acc + cantidad * precio;
   }, 0);
-  const iva = subtotal * 0.19;
-  const total = subtotal + iva;
-
-  return { subtotal, iva, total };
+  return { subtotal, total: subtotal };
 };
 
 const normalizarDetalle = (detalle = []) =>
@@ -376,7 +373,6 @@ function Reportes() {
         {
           DocumentoCliente: editorForm.DocumentoCliente,
           Subtotal: totales.subtotal,
-          Iva: totales.iva,
           Total: totales.total,
           MetodoPago: editorForm.MetodoPago,
           Observaciones: editorForm.Observaciones,
@@ -704,7 +700,6 @@ function Reportes() {
             <div class="totals">
               <div class="totals-box">
                 <div class="totals-row"><span>Subtotal</span><span>${formatCurrency(factura.Subtotal || 0)}</span></div>
-                <div class="totals-row"><span>IVA</span><span>${formatCurrency(factura.Impuesto ?? factura.Iva ?? 0)}</span></div>
                 <div class="totals-row"><span>Abonado</span><span>${formatCurrency(factura.MontoPagado || 0)}</span></div>
                 <div class="totals-row"><span>Saldo pendiente (${escaparHtml(factura.Estado || "Pendiente")})</span><span>${formatCurrency(factura.Saldo ?? factura.Total ?? 0)}</span></div>
                 <div class="totals-row"><span>Vencimiento</span><span>${escaparHtml(formatDate(factura.FechaVencimiento))}</span></div>
@@ -947,10 +942,6 @@ function Reportes() {
                     <p className="text-xs text-cyan-700 dark:text-cyan-300">Subtotal</p>
                     <p className="text-lg font-bold text-cyan-900 dark:text-cyan-100">{formatCurrency(facturaEnVista.Subtotal)}</p>
                   </div>
-                  <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900 p-4">
-                    <p className="text-xs text-amber-700 dark:text-amber-300">Impuesto</p>
-                    <p className="text-lg font-bold text-amber-900 dark:text-amber-100">{formatCurrency(facturaEnVista.Impuesto)}</p>
-                  </div>
                   <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 p-4">
                     <p className="text-xs text-emerald-700 dark:text-emerald-300">Total</p>
                     <p className="text-lg font-bold text-emerald-900 dark:text-emerald-100">{formatCurrency(facturaEnVista.Total)}</p>
@@ -1070,14 +1061,10 @@ function Reportes() {
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-2xl bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-100 dark:border-cyan-900 p-4">
                     <p className="text-xs text-cyan-700 dark:text-cyan-300">Subtotal</p>
                     <p className="text-lg font-bold text-cyan-900 dark:text-cyan-100">{formatCurrency(resumenEditor.subtotal)}</p>
-                  </div>
-                  <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900 p-4">
-                    <p className="text-xs text-amber-700 dark:text-amber-300">IVA</p>
-                    <p className="text-lg font-bold text-amber-900 dark:text-amber-100">{formatCurrency(resumenEditor.iva)}</p>
                   </div>
                   <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 p-4">
                     <p className="text-xs text-emerald-700 dark:text-emerald-300">Total</p>
