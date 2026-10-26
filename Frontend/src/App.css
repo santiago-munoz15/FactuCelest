@@ -161,6 +161,9 @@ body:has(.app-shell) { background: #f4f7fb; color: #102b45; }
 .dashboard-date span:not(.header-icon) { color: #71839a; font-size: 11px; }
 .header-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 auto; border-radius: 12px; background: #f4f7fb; color: #3e5a76; }
 .notification-button { position: relative; border: 0; cursor: pointer; }
+.calculator-open-button { border: 0; cursor: pointer; transition: background .18s ease, transform .18s ease; }
+.calculator-open-button:hover { background: #e8f2fa; transform: translateY(-1px); }
+.calculator-open-button:focus-visible { outline: 2px solid #1687ea; outline-offset: 2px; }
 .notification-button i { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border: 2px solid white; border-radius: 50%; background: #ef4444; }
 .dashboard-avatar { width: 44px; height: 44px; border: 0; cursor: pointer; }
 .dashboard-profile-wrap { position: relative; }
