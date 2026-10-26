@@ -238,7 +238,13 @@ body:has(.app-shell) { background: #f4f7fb; color: #102b45; }
   .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .sidebar-profile { justify-content: center; padding: 8px 0; }
   .sidebar-hover-layout > .app-layout-content,
   .sidebar-hover-layout > .app-layout-content.sidebar-is-expanded,
-  .sidebar-hover-layout > .app-layout-content.sidebar-is-collapsed { width: 100%; margin-left: 0; }
+  .sidebar-hover-layout > .app-layout-content.sidebar-is-collapsed { width: calc(100% - 72px); margin-left: 72px; }
+  .sidebar-hover-layout:has(> .app-sidebar:hover) > .app-layout-content,
+  .sidebar-hover-layout:has(> .app-sidebar:hover) > .app-layout-content.sidebar-is-expanded,
+  .sidebar-hover-layout:has(> .app-sidebar:hover) > .app-layout-content.sidebar-is-collapsed,
+  .sidebar-hover-layout:has(> .app-sidebar:focus-within) > .app-layout-content,
+  .sidebar-hover-layout:has(> .app-sidebar:focus-within) > .app-layout-content.sidebar-is-expanded,
+  .sidebar-hover-layout:has(> .app-sidebar:focus-within) > .app-layout-content.sidebar-is-collapsed { width: calc(100% - 340px); margin-left: 340px; }
 }
 
 /* Formulario de facturación */
