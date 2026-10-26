@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { showConfirmAlert, showSuccessAlert } from "../utils/sweetAlertHelper";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
+import AppHeader from "../components/AppHeader";
 
 const MainLayout = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -34,7 +35,7 @@ const MainLayout = ({ children }) => {
   };
 
   return (
-    <div className="app-shell min-h-screen bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
+    <div className="app-shell sidebar-hover-layout min-h-screen bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
       {mobileMenuOpen && (
         <button
           type="button"
@@ -59,6 +60,7 @@ const MainLayout = ({ children }) => {
       <div className={`app-layout-content flex flex-col min-w-0 w-full transition-all duration-300 ${sidebarOpen ? (sidebarCollapsed ? "sidebar-is-collapsed" : "sidebar-is-expanded") : "sidebar-is-hidden"}`}>
         <main className="app-main flex-1 min-w-0 overflow-y-auto p-4 md:p-6 bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
           <button type="button" className="mobile-menu-button" onClick={() => setMobileMenuOpen(true)} aria-label="Abrir menú">☰</button>
+          <AppHeader onLogout={handleLogout}/>
           {children}
         </main>
 

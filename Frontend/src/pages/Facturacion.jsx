@@ -8,6 +8,7 @@ import {
 } from "../utils/sweetAlertHelper";
 import FacturacionForm from "../components/FacturacionForm";
 import { buildApiUrl } from "../config/api";
+import { downloadInvoicePdf } from "../utils/downloadInvoicePdf";
 
 const formatearMoneda = (valor) =>
   new Intl.NumberFormat("es-CO", {
@@ -100,7 +101,7 @@ export default function Facturacion() {
     setVendedorId(null);
 
     if (texto.trim() === "") {
-      setResultadosVendedor([]);
+      setResultadosVendedor(vendedores);
       setVendedorTelefono("");
       return;
     }
@@ -190,8 +191,13 @@ export default function Facturacion() {
     const termino = textoBusqueda.trim();
 
     if (!termino) {
-      setCliente(null);
-      setResultadosCliente([]);
+      try {
+        const res = await axios.get(buildApiUrl("/api/clientes/listar"));
+        setResultadosCliente(res.data.success ? res.data.clientes || [] : []);
+      } catch (error) {
+        console.error("Error cargando clientes:", error);
+        setResultadosCliente([]);
+      }
       return;
     }
 
@@ -242,7 +248,6 @@ export default function Facturacion() {
         Talla: prod.Talla,
         PrecioVenta: prod.PrecioVenta,
         Cantidad: 1,
-        Descuento: 0,
         Total: prod.PrecioVenta,
       },
     ]);
@@ -258,26 +263,10 @@ export default function Facturacion() {
         ? {
             ...item,
             Cantidad: cantidadSegura,
-            Total: Math.max(0, cantidadSegura * item.PrecioVenta - Number(item.Descuento || 0)),
+            Total: cantidadSegura * item.PrecioVenta,
           }
         : item
     );
-    setDetalle(actualizado);
-  };
-
-  const handleDescuentoChange = (id, descuento) => {
-    const actualizado = detalle.map((item) => {
-      if (item.IdProducto !== id) return item;
-      const descuentoSeguro = Math.min(
-        item.Cantidad * item.PrecioVenta,
-        Math.max(0, Number(descuento) || 0)
-      );
-      return {
-        ...item,
-        Descuento: descuentoSeguro,
-        Total: Math.max(0, item.Cantidad * item.PrecioVenta - descuentoSeguro),
-      };
-    });
     setDetalle(actualizado);
   };
 
@@ -359,9 +348,9 @@ export default function Facturacion() {
         <html lang="es">
           <head>
             <meta charset="UTF-8" />
-            <title>Factura #${escaparHtml(factura.IdFactura)}</title>
+            <title>FactuCelest</title>
             <style>
-              @page { margin: 14mm; }
+              @page { margin: 0; }
               body {
                 font-family: Arial, Helvetica, sans-serif;
                 color: #111827;
@@ -371,7 +360,7 @@ export default function Facturacion() {
               .sheet {
                 max-width: 900px;
                 margin: 0 auto;
-                padding: 24px;
+                padding: 14mm 14mm 20mm;
               }
               .header {
                 display: flex;
@@ -464,6 +453,16 @@ export default function Facturacion() {
                 color: #6b7280;
                 text-align: center;
               }
+              @media print {
+                .footer {
+                  position: fixed;
+                  right: 0;
+                  bottom: 5mm;
+                  left: 0;
+                  margin: 0;
+                  text-align: center;
+                }
+              }
             </style>
           </head>
           <body>
@@ -538,6 +537,7 @@ export default function Facturacion() {
                 <div class="totals-box">
                   <div class="totals-row"><span>Subtotal</span><span>${formatearMoneda(factura.Subtotal || 0)}</span></div>
                   <div class="totals-row total"><span>Total</span><span>${formatearMoneda(factura.Total || 0)}</span></div>
+                  <div class="totals-row"><span>Abono inicial</span><span>${formatearMoneda(factura.MontoPagado || 0)}</span></div>
                 </div>
               </div>
 
@@ -566,6 +566,22 @@ export default function Facturacion() {
   };
 
   // ðŸ”¹ Guardar factura en el backend
+  const descargarFacturaPdf = async (idFactura) => {
+    try {
+      const res = await axios.get(buildApiUrl(`/api/facturas/detalle/${idFactura}`));
+      if (!res.data.success || !res.data.factura) {
+        showErrorAlert("Factura guardada", "No fue posible preparar el PDF de la factura.");
+        return false;
+      }
+      downloadInvoicePdf(res.data.factura);
+      return true;
+    } catch (error) {
+      console.error("Error descargando PDF de la factura:", error);
+      showErrorAlert("Factura guardada", "La factura se guardó, pero no fue posible descargar el PDF.");
+      return false;
+    }
+  };
+
   const guardarFactura = async () => {
     try {
       const facturaData = {
@@ -638,9 +654,12 @@ export default function Facturacion() {
     const guardada = await guardarFactura();
 
     if (guardada?.success) {
+      const pdfDescargado = await descargarFacturaPdf(guardada.IdFactura);
       const decision = await showConfirmAlert(
-        "Factura generada",
-        "¿Deseas imprimir la factura recién creada?"
+        pdfDescargado ? "PDF descargado" : "Factura generada",
+        pdfDescargado
+          ? "¿Deseas abrir también la vista de impresión?"
+          : "No se pudo descargar el PDF. ¿Deseas abrir la vista de impresión?"
       );
 
       if (decision.isConfirmed) {
@@ -676,6 +695,7 @@ export default function Facturacion() {
     vendedorTelefono={vendedorTelefono}
     vendedores={vendedores}
     resultadosVendedor={resultadosVendedor}
+    setResultadosVendedor={setResultadosVendedor}
     handleBuscarVendedor={handleBuscarVendedor}
     seleccionarVendedor={seleccionarVendedor}
     mostrarModalVendedor={mostrarModalVendedor}
@@ -690,7 +710,6 @@ export default function Facturacion() {
     handleAgregarProducto={handleAgregarProducto}
     detalle={detalle}
     handleCantidadChange={handleCantidadChange}
-    handleDescuentoChange={handleDescuentoChange}
     handleEliminarProducto={handleEliminarProducto}
     metodoPago={metodoPago}
     setMetodoPago={setMetodoPago}

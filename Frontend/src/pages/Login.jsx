@@ -16,6 +16,7 @@ export default function Login() {
   // Estados login
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // Estados para registro y modal
   const [isSignUpMode, setIsSignUpMode] = useState(false);
@@ -107,7 +108,12 @@ export default function Login() {
               </label>
               <label className="auth-input">
                 <span aria-hidden="true">*</span>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Contraseña" required />
+                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Contraseña" required />
+                <button type="button" className="auth-password-toggle" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"} aria-pressed={showPassword}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    {showPassword ? <><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c5 0 8.5 4.5 9.5 7-.4 1-1.2 2.2-2.3 3.3"/><path d="M6.2 6.2C3.9 7.6 2.7 9.6 2.5 12c.5 1.2 1.5 2.8 3 4a10 10 0 0 0 6.5 2.5c1.1 0 2.1-.2 3-.5"/></> : <><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="2.5"/></>}
+                  </svg>
+                </button>
               </label>
               <button type="submit" className="auth-button">Ingresar</button>
               <p className="auth-switch">¿Aún no tienes una cuenta? <button type="button" onClick={() => setIsSignUpMode(true)}>Regístrate</button></p>

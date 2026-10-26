@@ -1039,8 +1039,6 @@ function Reportes() {
                   >
                     <option value="Efectivo">Efectivo</option>
                     <option value="Transferencia">Transferencia</option>
-                    <option value="Nequi">Nequi</option>
-                    <option value="Tarjeta">Tarjeta</option>
                   </select>
 
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mt-4">
