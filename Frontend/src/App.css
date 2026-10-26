@@ -221,9 +221,21 @@ body:has(.app-shell) { background: #f4f7fb; color: #102b45; }
 .app-shell > .app-layout-content > footer { padding: 8px; background: #f4f7fb; color: #8090a1; font-size: 10px; }
 
 @media (min-width: 901px) {
-  .sidebar-hover-layout > .app-sidebar { transform: translateX(calc(-100% + 14px)); }
+  .sidebar-hover-layout > .app-sidebar { width: 72px; padding: 22px 10px 16px; transform: translateX(0); }
   .sidebar-hover-layout > .app-sidebar:hover,
-  .sidebar-hover-layout > .app-sidebar:focus-within { transform: translateX(0); }
+  .sidebar-hover-layout > .app-sidebar:focus-within { width: 340px; padding: 22px 17px 16px; transform: translateX(0); }
+  .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .brand-copy,
+  .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .sidebar-toggle,
+  .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .sidebar-search input,
+  .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .sidebar-search kbd,
+  .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .sidebar-label,
+  .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .sidebar-chevron,
+  .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .profile-copy,
+  .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .profile-more { display: none; }
+  .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .sidebar-brand { justify-content: center; padding: 0; }
+  .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .sidebar-search { width: 49px; justify-content: center; padding: 0; margin-right: auto; margin-left: auto; }
+  .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .sidebar-item { justify-content: center; gap: 0; padding: 10px 0; }
+  .sidebar-hover-layout > .app-sidebar:not(:hover):not(:focus-within) .sidebar-profile { justify-content: center; padding: 8px 0; }
   .sidebar-hover-layout > .app-layout-content,
   .sidebar-hover-layout > .app-layout-content.sidebar-is-expanded,
   .sidebar-hover-layout > .app-layout-content.sidebar-is-collapsed { width: 100%; margin-left: 0; }

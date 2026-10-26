@@ -651,6 +651,12 @@ export default function Facturacion() {
       return;
     }
 
+    const confirmacion = await showConfirmAlert(
+      "Confirmar factura",
+      "¿Deseas guardar y generar esta factura?"
+    );
+    if (!confirmacion.isConfirmed) return;
+
     const guardada = await guardarFactura();
 
     if (guardada?.success) {
@@ -687,6 +693,7 @@ export default function Facturacion() {
     nombreClienteBusqueda={nombreClienteBusqueda}
     setNombreClienteBusqueda={setNombreClienteBusqueda}
     resultadosCliente={resultadosCliente}
+    setResultadosCliente={setResultadosCliente}
     handleBuscarCliente={handleBuscarCliente}
     seleccionarCliente={seleccionarCliente}
     mostrarModalCliente={mostrarModalCliente}
