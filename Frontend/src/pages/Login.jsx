@@ -66,18 +66,27 @@ export default function Login() {
     try {
       const res = await axios.post(buildApiUrl("/api/usuarios/registrar"), registro);
       setVerificando(true);
-      const mensaje = res.data?.codigoVerificacion
-        ? `${res.data.message} Código: ${res.data.codigoVerificacion}`
-        : res.data?.message || "Usuario registrado";
-      showInfoAlert("Registro", mensaje);
+      await showInfoAlert("Revisa tu correo", res.data?.message || "Te enviamos un código de verificación.");
     } catch (error) {
-      const message =
-        error?.response?.data?.message || "No se pudo registrar el usuario";
-      showErrorAlert("Error", message);
+      const data = error.response?.data;
+      if (data?.code === "REGISTRATION_PENDING" || data?.code === "REGISTRATION_EMAIL_FAILED") {
+        setVerificando(true);
+        await showInfoAlert("Verificación pendiente", data.message);
+        return;
+      }
+      showErrorAlert("Error", data?.message || "No se pudo registrar el usuario.");
     }
   };
 
-  // 🔹 VERIFICAR CÓDIGO
+  const handleReenviarCodigo = async () => {
+    try {
+      const res = await axios.post(buildApiUrl("/api/usuarios/reenviar-codigo"), { email: registro.email });
+      await showSuccessAlert("Código enviado", res.data.message);
+    } catch (error) {
+      showErrorAlert("No se pudo enviar", error.response?.data?.message || "Intenta nuevamente en un momento.");
+    }
+  };
+
   const handleVerificar = async (e) => {
     e.preventDefault();
     try {
@@ -87,11 +96,10 @@ export default function Login() {
       });
       await showSuccessAlert("¡Verificado!", res.data.message);
       resetRegistration();
-    } catch {
-      showErrorAlert("Error", "Código incorrecto");
+    } catch (error) {
+      showErrorAlert("No se pudo verificar", error.response?.data?.message || "Revisa el código e inténtalo de nuevo.");
     }
   };
-
   return (
     <main className={`auth-page ${isSignUpMode ? "sign-up-mode" : ""}`}>
       <div className="auth-container">
@@ -132,8 +140,10 @@ export default function Login() {
                 </>
               ) : (
                 <>
-                  <label className="auth-input"><span aria-hidden="true">#</span><input value={registro.codigo} onChange={(e) => setRegistro({ ...registro, codigo: e.target.value })} placeholder="Código de verificación" required /></label>
+                  <label className="auth-input"><span aria-hidden="true">#</span><input value={registro.codigo} onChange={(e) => setRegistro({ ...registro, codigo: e.target.value.replace(/\D/g, "").slice(0, 6) })} placeholder="Código de verificación" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required /></label>
                   <button type="submit" className="auth-button">Verificar</button>
+                  <button type="button" className="auth-secondary-button" onClick={handleReenviarCodigo}>Reenviar código</button>
+                  <button type="button" className="auth-text-button" onClick={() => setVerificando(false)}>Cambiar datos de registro</button>
                 </>
               )}
               <p className="auth-switch">¿Ya tienes una cuenta? <button type="button" onClick={resetRegistration}>Inicia sesión</button></p>

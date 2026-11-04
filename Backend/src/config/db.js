@@ -22,6 +22,8 @@ const ensureSchema = async (pool) => {
     IF COL_LENGTH('dbo.Clientes', 'Ciudad') IS NULL ALTER TABLE dbo.Clientes ADD Ciudad VARCHAR(100) NULL;
     IF COL_LENGTH('dbo.Clientes', 'Departamento') IS NULL ALTER TABLE dbo.Clientes ADD Departamento VARCHAR(100) NULL;
     IF COL_LENGTH('dbo.Clientes', 'TipoDocumento') IS NULL ALTER TABLE dbo.Clientes ADD TipoDocumento VARCHAR(10) NULL;
+    IF COL_LENGTH('dbo.InicioSesion', 'CodigoExpiraEn') IS NULL ALTER TABLE dbo.InicioSesion ADD CodigoExpiraEn DATETIME NULL;
+    IF COL_LENGTH('dbo.InicioSesion', 'CodigoEnviadoEn') IS NULL ALTER TABLE dbo.InicioSesion ADD CodigoEnviadoEn DATETIME NULL;
   `);
 
   // SQL Server compila cada lote antes de aplicar los ALTER TABLE anteriores.
