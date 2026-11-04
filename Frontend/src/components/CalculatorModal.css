@@ -1,27 +1,15 @@
-.calculator-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  background:
-    radial-gradient(circle at 15% 75%, rgba(255, 40, 180, .18), transparent 24%),
-    radial-gradient(circle at 90% 35%, rgba(0, 220, 255, .18), transparent 25%),
-    rgba(5, 11, 19, .78);
-  backdrop-filter: blur(7px);
-}
-
 .calculator-modal {
-  position: relative;
-  width: min(430px, 100%);
-  max-height: calc(100vh - 40px);
+  position: fixed;
+  z-index: 1100;
+  box-sizing: border-box;
+  width: min(430px, calc(100vw - 28px));
+  max-height: calc(100vh - 24px);
   padding: 18px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, .25);
   border-radius: 30px;
   background: linear-gradient(145deg, rgba(24, 36, 50, .97), rgba(7, 16, 27, .98));
-  box-shadow: 0 35px 80px rgba(0, 0, 0, .65), inset 0 1px 1px rgba(255, 255, 255, .16);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .35), inset 0 1px 1px rgba(255, 255, 255, .16);
   color: #f4fbff;
 }
 
@@ -40,14 +28,24 @@
   align-items: center;
   justify-content: space-between;
   margin: 0 3px 14px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
 }
 
+.calculator-modal-heading:active { cursor: grabbing; }
+
 .calculator-modal-heading h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
   margin: 0;
   color: #e5faff;
   font-size: 18px;
   font-weight: 650;
 }
+
+.calculator-modal-heading h2 small { color: #91a8b7; font-size: 10px; font-weight: 450; }
 
 .calculator-modal-heading button {
   display: grid;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./CalculatorModal.css";
 
 const keys = [
@@ -52,6 +52,10 @@ function calculate(expression) {
 }
 
 export default function CalculatorModal({ onClose }) {
+  const calculatorRef = useRef(null);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const dragging = useRef(false);
+  const [position, setPosition] = useState({ x: null, y: 96 });
   const [expression, setExpression] = useState("");
   const [result, setResult] = useState("");
   const [error, setError] = useState("");
@@ -64,6 +68,12 @@ export default function CalculatorModal({ onClose }) {
     setError("");
     setJustCalculated(false);
   };
+
+  useEffect(() => {
+    const previousFocus = document.activeElement;
+    calculatorRef.current?.focus();
+    return () => previousFocus?.focus?.();
+  }, []);
 
   const pressKey = (key) => {
     if (key === "AC") return clear();
@@ -117,6 +127,7 @@ export default function CalculatorModal({ onClose }) {
 
   useEffect(() => {
     const handleKeyDown = (event) => {
+      if (!calculatorRef.current?.contains(document.activeElement)) return;
       if (event.key === "Escape") {
         onClose();
       } else if (/^\d$/.test(event.key) || ["+", "-", "*", "/", "%", "."].includes(event.key)) {
@@ -134,11 +145,31 @@ export default function CalculatorModal({ onClose }) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   });
 
-  return <div className="calculator-modal-overlay" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <section className="calculator-modal" role="dialog" aria-modal="true" aria-labelledby="calculator-title">
-      <header className="calculator-modal-heading"><h2 id="calculator-title">Calculadora</h2><button type="button" onClick={onClose} aria-label="Cerrar calculadora">×</button></header>
+  const startDragging = (event) => {
+    if (event.target.closest("button")) return;
+    event.preventDefault();
+    const rect = calculatorRef.current.getBoundingClientRect();
+    dragging.current = true;
+    dragOffset.current = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    setPosition({ x: rect.left, y: rect.top });
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const moveCalculator = (event) => {
+    if (!dragging.current) return;
+    const rect = calculatorRef.current.getBoundingClientRect();
+    const x = Math.min(Math.max(12, event.clientX - dragOffset.current.x), window.innerWidth - rect.width - 12);
+    const y = Math.min(Math.max(12, event.clientY - dragOffset.current.y), window.innerHeight - rect.height - 12);
+    setPosition({ x: Math.max(12, x), y: Math.max(12, y) });
+  };
+
+  const stopDragging = () => { dragging.current = false; };
+
+  return <section ref={calculatorRef} className="calculator-modal" role="dialog" aria-modal="false" aria-labelledby="calculator-title" tabIndex={-1} style={{ left: position.x === null ? "auto" : position.x, right: position.x === null ? 24 : "auto", top: position.y }}>
+      <header className="calculator-modal-heading" onPointerDown={startDragging} onPointerMove={moveCalculator} onPointerUp={stopDragging} onPointerCancel={stopDragging}>
+        <h2 id="calculator-title">Calculadora <small>Arrastra para mover</small></h2><button type="button" onClick={onClose} aria-label="Cerrar calculadora">×</button>
+      </header>
       <div className="calculator-display" aria-live="polite">{display}</div>
       <div className="calculator-keys">{keys.map(({ label, type, extra }) => <button key={label} type="button" className={["calculator-key", "is-" + type, extra].filter(Boolean).join(" ")} onClick={() => pressKey(label)} aria-label={label === "DEL" ? "Borrar último dígito" : label}>{label}</button>)}</div>
-    </section>
-  </div>;
+  </section>;
 }
