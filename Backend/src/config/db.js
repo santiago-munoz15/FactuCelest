@@ -26,6 +26,18 @@ const ensureSchema = async (pool) => {
     IF COL_LENGTH('dbo.InicioSesion', 'CodigoEnviadoEn') IS NULL ALTER TABLE dbo.InicioSesion ADD CodigoEnviadoEn DATETIME NULL;
   `);
 
+  // Los teléfonos son identificadores: conservarlos como texto evita perder
+  // ceros iniciales y evita conversiones numéricas que los dejan en NULL.
+  await pool.request().query(`
+    IF EXISTS (
+      SELECT 1 FROM sys.columns
+      WHERE object_id = OBJECT_ID('dbo.Clientes')
+        AND name = 'Telefono'
+        AND (TYPE_NAME(user_type_id) <> 'varchar' OR max_length < 30)
+    )
+      ALTER TABLE dbo.Clientes ALTER COLUMN Telefono VARCHAR(30) NULL;
+  `);
+
   // SQL Server compila cada lote antes de aplicar los ALTER TABLE anteriores.
   await pool.request().query(`
     UPDATE dbo.Clientes SET TipoDocumento = 'CC' WHERE TipoDocumento IS NULL;
@@ -105,6 +117,21 @@ const ensureSchema = async (pool) => {
         CONSTRAINT FK_Pagos_Facturas FOREIGN KEY (IdFacturaFK) REFERENCES dbo.Facturas(IdFactura)
       );
       CREATE INDEX IX_Pagos_IdFacturaFK_FechaPago ON dbo.Pagos(IdFacturaFK, FechaPago);
+    END;
+
+    IF OBJECT_ID('dbo.Notificaciones', 'U') IS NULL
+    BEGIN
+      CREATE TABLE dbo.Notificaciones (
+        IdNotificacion BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        Clave VARCHAR(100) NOT NULL UNIQUE,
+        Tipo VARCHAR(30) NOT NULL,
+        Titulo VARCHAR(150) NOT NULL,
+        Mensaje VARCHAR(500) NOT NULL,
+        Ruta VARCHAR(100) NOT NULL DEFAULT('/pagos'),
+        Fecha DATETIME NOT NULL DEFAULT(GETDATE()),
+        Leida BIT NOT NULL DEFAULT(0)
+      );
+      CREATE INDEX IX_Notificaciones_Fecha ON dbo.Notificaciones(Fecha DESC);
     END;
   `);
 };

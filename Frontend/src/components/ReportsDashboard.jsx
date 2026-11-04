@@ -10,7 +10,6 @@ export default function ReportsDashboard({
   productosVendidos, ventasPorMes, ventasPorMetodo, totalMetodos, donutStops,
   exportar, formatCurrency, formatDate, verFactura, descargarExcel, abrirEditor,
 }) {
-  const fechaActual = new Date();
   const maxVentaMes = Math.max(1, ...ventasPorMes.map((item) => item.total));
   const colors = ["#087bf5", "#07bd82", "#8b5cf6", "#f59e0b", "#ef5c78"];
   const metodosDeFactura = (factura) => {
@@ -20,12 +19,7 @@ export default function ReportsDashboard({
     return metodos.join(" + ") || "—";
   };
 
-  return <>
-    <header className="reports-topbar">
-      <div className="reports-global-search"><span>⌕</span><input placeholder="Buscar en el sistema..." aria-label="Buscar en el sistema"/><kbd>Ctrl + K</kbd></div>
-      <div className="reports-top-actions"><button type="button" className="reports-notification" aria-label="Notificaciones">♧<i>3</i></button><div className="reports-current-date"><span>▦</span><div><strong>{fechaActual.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</strong><small>{fechaActual.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</small></div></div><span className="reports-avatar">SM</span><button className="reports-chevron" aria-label="Menú de usuario">⌄</button></div>
-    </header>
-    <div className="reports-content">
+  return <div className="reports-content">
       <div className="reports-heading"><div className="reports-heading-title"><span>▥</span><div><h1>Reportes</h1><p>Consulta y genera reportes de ventas, facturación y más.</p></div></div><div className="reports-heading-actions"><button className="reports-export-button" onClick={exportar}>♙ <span>Exportar reporte</span><small>⌄</small></button><button className="reports-generate-button" onClick={handleBuscar}>➤ <span>Generar reporte</span></button></div></div>
 
       <section className="reports-stats"><ReportStat tone="green" icon="▤" label="Total Facturado" value={formatCurrency(resumen.total)} note="periodo consultado"/><ReportStat tone="blue" icon="🛒" label="Total Ventas" value={resumen.cantidad} note="facturas registradas"/><ReportStat tone="purple" icon="♟" label="Clientes Atendidos" value={clientesAtendidos} note="clientes únicos"/><ReportStat tone="orange" icon="⬡" label="Productos Vendidos" value={productosVendidos} note="unidades facturadas"/></section>
@@ -39,6 +33,5 @@ export default function ReportsDashboard({
       </div>
 
       <section className="reports-card reports-results-card"><div className="reports-results-heading"><div className="reports-card-heading"><span>▰</span><h2>Resultados de la consulta</h2></div><div><span>{facturas.length} resultado{facturas.length === 1 ? "" : "s"}</span><button onClick={exportar} aria-label="Exportar resultados">⛶</button></div></div><div className="reports-table-scroll"><table className="reports-table"><thead><tr><th>#</th><th>Factura</th><th>Cliente</th><th>Documento</th><th>Vendedor</th><th>Fecha</th><th>Método de pago</th><th>Estado</th><th>Abonado</th><th>Saldo</th><th>Total</th><th>Acciones</th></tr></thead><tbody>{loading ? <tr><td colSpan="12" className="reports-empty-cell">Cargando facturas...</td></tr> : facturas.length === 0 ? <tr><td colSpan="12" className="reports-empty-cell">No hay facturas para los filtros seleccionados.</td></tr> : facturas.map((factura, index) => <tr key={factura.IdFactura}><td>{index + 1}</td><td><strong className="reports-invoice-number">#{factura.IdFactura}</strong></td><td>{factura.NombreCliente || "—"}</td><td>{factura.DocumentoCliente || "—"}</td><td>{factura.NombreVendedor || "—"}</td><td>{formatDate(factura.Fecha)}</td><td><span className="reports-payment-badge">{metodosDeFactura(factura)}</span></td><td><span className={`reports-payment-badge reports-status-${String(factura.Estado || "Pendiente").toLowerCase()}`}>{factura.Estado || "Pendiente"}</span></td><td>{formatCurrency(factura.MontoPagado)}</td><td>{formatCurrency(factura.Saldo)}</td><td className="reports-row-total">{formatCurrency(factura.Total)}</td><td><div className="reports-row-actions"><button onClick={() => verFactura(factura)} title="Ver factura">◉ <span>Ver</span></button><button onClick={() => descargarExcel(factura.IdFactura)} title="Descargar Excel">↓ <span>Descargar</span></button><button className="reports-edit-action" onClick={() => abrirEditor(factura)} title="Editar factura">✎</button></div></td></tr>)}</tbody></table></div></section>
-    </div>
-  </>;
+  </div>;
 }

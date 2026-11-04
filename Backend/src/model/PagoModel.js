@@ -1,5 +1,7 @@
 import { getConnection, sql } from "../config/db.js";
 
+const MONTO_MINIMO_ABONO = 5000;
+
 const PagoModel = {
   listarFacturas: async ({ estado = "", busqueda = "" } = {}) => {
     const pool = await getConnection();
@@ -59,6 +61,14 @@ const PagoModel = {
       const factura = resumen.recordset[0];
       if (!factura) throw Object.assign(new Error("No existe esa factura."), { status: 404 });
       const saldo = Math.max(0, Number(factura.Total) - Number(factura.MontoPagado));
+      const minimoPermitido = Math.min(MONTO_MINIMO_ABONO, saldo);
+      if (monto < minimoPermitido) {
+        throw Object.assign(new Error(
+          saldo < MONTO_MINIMO_ABONO
+            ? `Para cerrar esta factura, el abono debe cubrir el saldo completo de ${saldo.toLocaleString("es-CO")} COP.`
+            : "El abono mínimo es de $5.000 COP."
+        ), { status: 400 });
+      }
       if (monto > saldo + 0.001) {
         throw Object.assign(new Error(`El abono supera el saldo pendiente de ${saldo.toFixed(2)}.`), { status: 400 });
       }

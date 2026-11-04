@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import CalculatorModal from "./CalculatorModal";
+import { buildApiUrl } from "../config/api";
 
 const initials = (name = "Santiago Muñoz") => name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 
@@ -15,10 +18,84 @@ function Icon({ name, size = 20 }) {
 export default function AppHeader({ onLogout }) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
+  const [notificationsError, setNotificationsError] = useState("");
+  const notificationsRef = useRef(null);
+  const navigate = useNavigate();
   let user = {};
   try { user = JSON.parse(localStorage.getItem("usuario") || "{}"); } catch { /* Use the fallback account label. */ }
   const displayName = user.Nombre || user.nombre || user.NombreUsuario || "Santiago Muñoz";
   const today = new Date();
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const response = await axios.get(buildApiUrl("/api/notificaciones"));
+      setNotifications(response.data.notificaciones || []);
+      setUnreadCount(Number(response.data.noLeidas || 0));
+      setNotificationsError("");
+    } catch (error) {
+      console.error("Error cargando notificaciones:", error);
+      setNotificationsError("No se pudieron cargar las notificaciones.");
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadNotifications();
+    const interval = window.setInterval(loadNotifications, 60000);
+    return () => window.clearInterval(interval);
+  }, [loadNotifications]);
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) setNotificationsOpen(false);
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setNotificationsOpen(false);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  const markNotificationRead = async (notification) => {
+    if (!notification.Leida) {
+      try {
+        await axios.patch(buildApiUrl(`/api/notificaciones/${notification.IdNotificacion}/leer`));
+        setNotifications((current) => current.map((item) => item.IdNotificacion === notification.IdNotificacion ? { ...item, Leida: true } : item));
+        setUnreadCount((count) => Math.max(0, count - 1));
+      } catch (error) {
+        console.error("Error al marcar notificación como leída:", error);
+        setNotificationsError("No se pudo actualizar la notificación.");
+        return;
+      }
+    }
+    setNotificationsOpen(false);
+    navigate(notification.Ruta || "/pagos");
+  };
+
+  const markAllNotificationsRead = async () => {
+    try {
+      await axios.patch(buildApiUrl("/api/notificaciones/leer-todas"));
+      setNotifications((current) => current.map((item) => ({ ...item, Leida: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Error al marcar notificaciones como leídas:", error);
+      setNotificationsError("No se pudieron marcar como leídas.");
+    }
+  };
+
+  const formatNotificationDate = (value) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
+  };
 
   return <>
   <header className="dashboard-header app-shared-header">
@@ -26,7 +103,22 @@ export default function AppHeader({ onLogout }) {
     <div className="dashboard-header-actions">
       <div className="dashboard-date"><span className="header-icon"><Icon name="calendar"/></span><div><strong>{today.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</strong><span>{today.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</span></div></div>
       <button type="button" className="header-icon calculator-open-button" aria-label="Abrir calculadora" title="Calculadora" onClick={() => setCalculatorOpen(true)}><Icon name="calculator"/></button>
-      <button type="button" className="header-icon notification-button" aria-label="Notificaciones"><Icon name="bell"/><i/></button>
+      <div className="notification-wrap" ref={notificationsRef}>
+        <button type="button" className="header-icon notification-button" aria-label={`Notificaciones${unreadCount ? `, ${unreadCount} sin leer` : ""}`} aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((open) => !open); loadNotifications(); }}>
+          <Icon name="bell"/>{unreadCount > 0 && <span className="notification-count">{unreadCount > 99 ? "99+" : unreadCount}</span>}
+        </button>
+        {notificationsOpen && <section className="notification-popover" aria-label="Centro de notificaciones">
+          <header className="notification-popover-header"><div><strong>Notificaciones</strong><span>{unreadCount ? `${unreadCount} sin leer` : "Todo al día"}</span></div>{unreadCount > 0 && <button type="button" onClick={markAllNotificationsRead}>Marcar todas como leídas</button>}</header>
+          {notificationsLoading ? <p className="notification-state">Cargando notificaciones…</p>
+            : notificationsError ? <p className="notification-state notification-error">{notificationsError}<button type="button" onClick={loadNotifications}>Reintentar</button></p>
+            : notifications.length === 0 ? <p className="notification-state">No tienes notificaciones por ahora.</p>
+            : <ul className="notification-list">{notifications.map((notification) => <li key={notification.IdNotificacion}>
+              <button type="button" className={`notification-item${notification.Leida ? " is-read" : ""}`} onClick={() => markNotificationRead(notification)}>
+                <span className="notification-item-dot" aria-hidden="true"/><span className="notification-item-copy"><strong>{notification.Titulo}</strong><span>{notification.Mensaje}</span><small>{formatNotificationDate(notification.Fecha)}</small></span>
+              </button>
+            </li>)}</ul>}
+        </section>}
+      </div>
       <div className="dashboard-profile-wrap"><button type="button" className="dashboard-avatar" aria-label="Abrir menú de perfil" aria-expanded={profileMenuOpen} onClick={() => setProfileMenuOpen((open) => !open)}>{initials(displayName)}</button>{profileMenuOpen && <div className="dashboard-profile-menu"><strong>{displayName}</strong><span>{user.Rol || user.rol || "Administrador"}</span><button type="button" onClick={() => { setProfileMenuOpen(false); onLogout(); }}>Cerrar sesión</button></div>}</div>
     </div>
   </header>

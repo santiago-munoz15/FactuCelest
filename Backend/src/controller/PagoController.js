@@ -1,4 +1,5 @@
 import PagoModel from "../model/PagoModel.js";
+import NotificacionModel from "../model/NotificacionModel.js";
 
 const METODOS_VALIDOS = new Set(["Efectivo", "Transferencia", "Tarjeta", "Nequi", "Daviplata"]);
 
@@ -43,6 +44,21 @@ const PagoController = {
 
     try {
       const result = await PagoModel.registrarAbono({ idFactura, monto, metodoPago, pagador, observaciones });
+      try {
+        const montoFormateado = monto.toLocaleString("es-CO");
+        const mensajeSaldo = result.saldoRestante <= 0
+          ? `La factura #${idFactura} quedó pagada.`
+          : `Se registró un abono de $${montoFormateado} a la factura #${idFactura}. Saldo pendiente: $${result.saldoRestante.toLocaleString("es-CO")}.`;
+        await NotificacionModel.crear({
+          clave: `pago-${result.pago.IdPago}`,
+          tipo: "Pago",
+          titulo: result.saldoRestante <= 0 ? "Factura pagada" : "Abono registrado",
+          mensaje: mensajeSaldo,
+          ruta: "/pagos",
+        });
+      } catch (notificationError) {
+        console.error("No se pudo crear la notificación del pago:", notificationError);
+      }
       res.status(201).json({ success: true, ...result });
     } catch (error) {
       console.error("Error al registrar abono:", error);

@@ -14,6 +14,7 @@ const date = (value) => {
 };
 
 const emptyPayment = { monto: "", metodoPago: "Efectivo", pagador: "", observaciones: "" };
+const MONTO_MINIMO_ABONO = 5000;
 
 export default function Pagos() {
   const [facturas, setFacturas] = useState([]);
@@ -64,6 +65,22 @@ export default function Pagos() {
   const registrarAbono = async (event) => {
     event.preventDefault();
     if (!seleccionada) return;
+    const saldoPendiente = Number(seleccionada.Saldo || 0);
+    const montoMinimo = Math.min(MONTO_MINIMO_ABONO, saldoPendiente);
+    const montoIngresado = Number(form.monto);
+    if (!Number.isFinite(montoIngresado) || montoIngresado < montoMinimo) {
+      showErrorAlert(
+        "Abono menor al mínimo",
+        saldoPendiente < MONTO_MINIMO_ABONO
+          ? `El saldo es menor a $5.000. Para cerrar la factura debes pagar el saldo completo de ${money(saldoPendiente)}.`
+          : "El abono mínimo permitido es de $5.000 COP."
+      );
+      return;
+    }
+    if (montoIngresado > saldoPendiente) {
+      showErrorAlert("Abono superior al saldo", `El abono no puede superar el saldo pendiente de ${money(saldoPendiente)}.`);
+      return;
+    }
     setGuardando(true);
     try {
       await axios.post(buildApiUrl(`/api/pagos/${seleccionada.IdFactura}/abonos`), form);
@@ -120,7 +137,7 @@ export default function Pagos() {
 
     {seleccionada && <div className="payments-overlay" onMouseDown={(event) => event.target === event.currentTarget && setSeleccionada(null)}><section className="payments-modal" role="dialog" aria-modal="true" aria-labelledby="payments-modal-title"><header><div><h2 id="payments-modal-title">Factura #{seleccionada.IdFactura}</h2><p>{seleccionada.NombreCliente} · {seleccionada.CondicionPago === "Contado" ? "Contado" : seleccionada.CondicionPago === "Credito30Dias" ? "Crédito a 30 días" : "Condición no especificada"} · Vence {date(seleccionada.FechaVencimiento)}</p></div><div className="payments-modal-actions"><button type="button" className="payments-print" onClick={imprimirFactura} disabled={imprimiendo}>{imprimiendo ? "Preparando..." : "Imprimir / guardar PDF"}</button><button type="button" onClick={() => setSeleccionada(null)} aria-label="Cerrar">×</button></div></header>
       <div className="payments-modal-summary"><span>Total <strong>{money(seleccionada.Total)}</strong></span><span>Abonado <strong>{money(seleccionada.MontoPagado)}</strong></span><span>Saldo <strong>{money(seleccionada.Saldo)}</strong></span></div>
-      {Number(seleccionada.Saldo) > 0 && <form className="payments-form" onSubmit={registrarAbono}><h3>Registrar abono</h3><div className="payments-form-grid"><label>Monto<input type="number" min="0.01" max={seleccionada.Saldo} step="0.01" required value={form.monto} onChange={(event) => setForm({ ...form, monto: event.target.value })} placeholder={`Hasta ${money(seleccionada.Saldo)}`}/></label><label>Medio de pago<select value={form.metodoPago} onChange={(event) => setForm({ ...form, metodoPago: event.target.value })}><option>Efectivo</option><option>Transferencia</option></select></label><label>Quién realizó el pago<input maxLength="150" value={form.pagador} onChange={(event) => setForm({ ...form, pagador: event.target.value })} placeholder="Nombre del pagador"/></label><label>Observaciones<input maxLength="500" value={form.observaciones} onChange={(event) => setForm({ ...form, observaciones: event.target.value })} placeholder="Opcional"/></label></div><button className="payments-save" disabled={guardando}>{guardando ? "Guardando..." : "Guardar abono"}</button></form>}
+      {Number(seleccionada.Saldo) > 0 && <form className="payments-form" noValidate onSubmit={registrarAbono}><h3>Registrar abono</h3><div className="payments-form-grid"><label>Monto<input type="number" min={Math.min(MONTO_MINIMO_ABONO, Number(seleccionada.Saldo))} max={seleccionada.Saldo} step="0.01" required value={form.monto} onChange={(event) => setForm({ ...form, monto: event.target.value })} placeholder={`Mínimo ${money(Math.min(MONTO_MINIMO_ABONO, Number(seleccionada.Saldo)))}`}/><small className="payments-minimum-note">Mínimo $5.000 COP; si el saldo es menor, paga el saldo completo.</small></label><label>Medio de pago<select value={form.metodoPago} onChange={(event) => setForm({ ...form, metodoPago: event.target.value })}><option>Efectivo</option><option>Transferencia</option></select></label><label>Quién realizó el pago<input maxLength="150" value={form.pagador} onChange={(event) => setForm({ ...form, pagador: event.target.value })} placeholder="Nombre del pagador"/></label><label>Observaciones<input maxLength="500" value={form.observaciones} onChange={(event) => setForm({ ...form, observaciones: event.target.value })} placeholder="Opcional"/></label></div><button className="payments-save" disabled={guardando}>{guardando ? "Guardando..." : "Guardar abono"}</button></form>}
       <h3 className="payments-history-title">Historial de pagos</h3>{abonos.length ? <div className="payments-history">{abonos.map((abono) => <article key={abono.IdPago}><div><strong>{money(abono.Monto)}</strong><span>{date(abono.FechaPago)} · {abono.MetodoPago}</span></div><div><b>{abono.Pagador || seleccionada.NombreCliente}</b>{abono.Observaciones && <small>{abono.Observaciones}</small>}</div></article>)}</div> : <p className="payments-no-history">Esta factura todavía no tiene abonos registrados.</p>}
     </section></div>}
   </main>;

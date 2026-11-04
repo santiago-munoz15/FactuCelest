@@ -19,6 +19,10 @@ export default function ModalCliente({ onClose, onClienteCreado }) {
       showErrorAlert("Revisa los datos", cliente.TipoDocumento === "CC" ? "La cédula debe contener solo números" : "Ingresa el NIT con guion y dígito de verificación, por ejemplo 890117288-7");
       return;
     }
+    if (cliente.Telefono.trim() && !/^\d{1,30}$/.test(cliente.Telefono.trim())) {
+      showErrorAlert("Teléfono no válido", "El teléfono solo puede contener hasta 30 números.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await axios.post(buildApiUrl("/api/clientes/crear"), { ...cliente, Documento: cliente.Documento.trim(), Telefono: cliente.Telefono.trim(), Correo: cliente.Correo.trim() });
@@ -36,7 +40,7 @@ export default function ModalCliente({ onClose, onClienteCreado }) {
         <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tipo de documento<select name="TipoDocumento" value={cliente.TipoDocumento} onChange={(e) => setCliente((actual) => ({ ...actual, TipoDocumento: e.target.value, Documento: "" }))} className={`${inputClass} mt-2`}><option value="CC">Cédula de ciudadanía</option><option value="NIT">NIT</option></select></label>
         <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{cliente.TipoDocumento === "CC" ? "Número de cédula" : "NIT"}<input required maxLength="30" name="Documento" inputMode={cliente.TipoDocumento === "CC" ? "numeric" : "text"} pattern={cliente.TipoDocumento === "CC" ? "[0-9]+" : "[0-9]+-[0-9]"} placeholder={cliente.TipoDocumento === "CC" ? "Solo números" : "890117288-7"} value={cliente.Documento} onChange={handleChange} className={`${inputClass} mt-2`} /></label>
         <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Nombre completo<input required maxLength="50" name="Nombre" value={cliente.Nombre} onChange={handleChange} className={`${inputClass} mt-2`} /></label>
-        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Teléfono (opcional)<input name="Telefono" inputMode="numeric" pattern="[0-9]*" value={cliente.Telefono} onChange={handleChange} className={`${inputClass} mt-2`} /></label>
+        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Teléfono (opcional)<input name="Telefono" inputMode="numeric" pattern="[0-9]*" maxLength={30} value={cliente.Telefono} onChange={handleChange} className={`${inputClass} mt-2`} /></label>
         <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Correo (opcional)<input type="email" maxLength="100" name="Correo" value={cliente.Correo} onChange={handleChange} className={`${inputClass} mt-2`} /></label>
         <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Dirección<input maxLength="150" name="Direccion" value={cliente.Direccion} onChange={handleChange} className={`${inputClass} mt-2`} /></label>
         <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Departamento<input maxLength="100" name="Departamento" value={cliente.Departamento} onChange={handleChange} className={`${inputClass} mt-2`} /></label>

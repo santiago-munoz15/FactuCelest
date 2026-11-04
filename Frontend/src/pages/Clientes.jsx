@@ -97,6 +97,11 @@ function Clientes() {
       return;
     }
 
+    if (Telefono.trim() && !/^\d{1,30}$/.test(Telefono.trim())) {
+      showErrorAlert("Teléfono no válido", "El teléfono solo puede contener hasta 30 números.");
+      return;
+    }
+
     setGuardando(true);
     try {
       const res = await axios.put(
@@ -372,6 +377,9 @@ function Clientes() {
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={30}
                   value={clienteEdit.Telefono}
                   onChange={(e) =>
                     setClienteEdit((actual) => ({ ...actual, Telefono: e.target.value }))

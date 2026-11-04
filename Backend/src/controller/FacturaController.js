@@ -1,6 +1,7 @@
 // src/controllers/FacturaController.js
 import XLSX from "xlsx";
 import FacturaModel from "../model/FacturaModel.js";
+import NotificacionModel from "../model/NotificacionModel.js";
 
 const DATOS_EMPRESA = {
   Nombre: "INTIMAS CELESTE",
@@ -154,6 +155,18 @@ const FacturaController = {
       }
 
       console.log("✅ Factura creada con ID:", result.IdFactura);
+
+      try {
+        await NotificacionModel.crear({
+          clave: `factura-${result.IdFactura}`,
+          tipo: "Factura",
+          titulo: "Nueva factura registrada",
+          mensaje: `Se creó la factura #${result.IdFactura} por $${Number(Total).toLocaleString("es-CO")} para el cliente ${DocumentoCliente}.`,
+          ruta: "/pagos",
+        });
+      } catch (notificationError) {
+        console.error("No se pudo crear la notificación de factura:", notificationError);
+      }
 
       res.status(201).json({
         success: true,

@@ -25,7 +25,7 @@ const ClienteController = {
     try {
       const { Nombre, Telefono, Correo, Direccion, Departamento, Ciudad } = req.body;
       if (!String(Nombre ?? "").trim()) return res.status(400).json({ success: false, message: "El nombre es obligatorio" });
-      if (Telefono && !/^\d+$/.test(String(Telefono))) return res.status(400).json({ success: false, message: "El teléfono solo puede contener números" });
+      if (Telefono != null && String(Telefono).trim() && !/^\d{1,30}$/.test(String(Telefono).trim())) return res.status(400).json({ success: false, message: "El teléfono solo puede contener hasta 30 números" });
       if (Correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(Correo))) return res.status(400).json({ success: false, message: "El correo no tiene un formato válido" });
       const resultado = await ClienteModel.actualizar(req.params.documento, { Nombre, Telefono, Correo, Direccion, Departamento, Ciudad });
       return resultado.success ? res.json({ success: true, message: resultado.message, data: resultado.cliente }) : res.status(404).json({ success: false, message: resultado.message });
@@ -45,7 +45,7 @@ const ClienteController = {
       if (!String(Nombre ?? "").trim() || String(Nombre).trim().length > 50 || Documento.length > 30 || !documentoValido(TipoDocumento, Documento)) {
         return res.status(400).json({ success: false, message: "Indica un nombre y un documento válido: cédula numérica o NIT con guion y dígito de verificación" });
       }
-      if (Telefono && !/^\d+$/.test(String(Telefono))) return res.status(400).json({ success: false, message: "El teléfono solo puede contener números" });
+      if (Telefono != null && String(Telefono).trim() && !/^\d{1,30}$/.test(String(Telefono).trim())) return res.status(400).json({ success: false, message: "El teléfono solo puede contener hasta 30 números" });
       if (Correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(Correo))) return res.status(400).json({ success: false, message: "El correo no tiene un formato válido" });
       const resultado = await ClienteModel.crear({ Nombre, TipoDocumento, Documento, Telefono, Correo, Direccion, Departamento, Ciudad });
       return res.status(201).json({ success: true, message: resultado.message, data: resultado.cliente });
