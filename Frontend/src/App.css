@@ -128,6 +128,7 @@ body:has(.app-shell) { background: #f4f7fb; color: #102b45; }
 .sidebar-item.active { background: linear-gradient(105deg,#0bbbd5,#12628a); color: white; box-shadow: 0 8px 18px rgba(4,17,32,.17); }
 .sidebar-item.active:hover { background: linear-gradient(105deg,#0bbbd5,#12628a); }
 .sidebar-icon { width: 24px; color: #b4def0; font-size: 23px; font-weight: 700; }
+.sidebar-module-svg { display: block; width: 24px; height: 24px; flex: 0 0 24px; }
 .sidebar-item.active .sidebar-icon { color: white; }
 .sidebar-chevron { margin-left: auto; color: #9ebfd0; font-size: 18px; }
 .sidebar-divider { display: none; }
