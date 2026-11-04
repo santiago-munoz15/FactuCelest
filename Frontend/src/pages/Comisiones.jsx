@@ -1,3 +1,4 @@
+import ModuleHero from "../components/ModuleHero";
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { buildApiUrl } from "../config/api";
@@ -98,7 +99,7 @@ export default function Comisiones() {
     ];
     const quote = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
     const content = rows.map((row) => row.map(quote).join(",")).join("\r\n");
-    const url = URL.createObjectURL(new Blob(["\ufeff", content], { type: "text/csv;charset=utf-8;" }));
+    const url = URL.createObjectURL(new Blob(["﻿", content], { type: "text/csv;charset=utf-8;" }));
     const link = document.createElement("a");
     link.href = url;
     link.download = `comisiones_${consulta.vendedor.replace(/[^a-z0-9]+/gi, "_")}_${consulta.mes}.csv`;
@@ -107,19 +108,8 @@ export default function Comisiones() {
   };
 
   return <div className="commissions-page">
-    <header className="commissions-heading">
-      <div><span className="commissions-heading-icon">%</span><div><h1>Comisiones</h1><p>Consulta las ventas mensuales y calcula la comisión del vendedor.</p></div></div>
-      <button type="button" onClick={exportar} disabled={!facturas.length}>Exportar reporte</button>
-    </header>
 
-    <form className="commissions-filters" onSubmit={consultarComision}>
-      <label>Vendedor<select value={vendedor} onChange={(event) => setVendedor(event.target.value)} disabled={cargandoVendedores} required>
-        <option value="">{cargandoVendedores ? "Cargando vendedores..." : "Selecciona un vendedor"}</option>
-        {vendedores.map((item) => <option key={item.IdVendedor} value={item.Nombre}>{item.Nombre}</option>)}
-      </select></label>
-      <label>Mes de ventas<input type="month" value={mes} onChange={(event) => setMes(event.target.value)} required/></label>
-      <button type="submit" disabled={cargando || cargandoVendedores}>{cargando ? "Calculando..." : "Consultar comisión"}</button>
-    </form>
+    <ModuleHero eyebrow="Módulo de comisiones" title="Comisiones de vendedores" description="Consulta las ventas mensuales y calcula el 6% de comisión para cada vendedor." stats={[{ label: "Vendedores", value: vendedores.length }, { label: "Facturas consultadas", value: facturas.length }]} toolbar={<><form className="module-hero-controls" onSubmit={consultarComision}><label>Vendedor<select value={vendedor} onChange={(event) => setVendedor(event.target.value)} disabled={cargandoVendedores} required><option value="">{cargandoVendedores ? "Cargando vendedores..." : "Selecciona un vendedor"}</option>{vendedores.map((item) => <option key={item.IdVendedor} value={item.Nombre}>{item.Nombre}</option>)}</select></label><label>Mes de ventas<input type="month" value={mes} onChange={(event) => setMes(event.target.value)} required/></label><button className="module-hero-action" type="submit" disabled={cargando || cargandoVendedores}>{cargando ? "Calculando..." : "Consultar comisión"}</button></form><button type="button" className="module-hero-secondary-action" onClick={exportar} disabled={!facturas.length}>Exportar</button></>}/>
 
     {error && <p className="commissions-error" role="alert">{error}</p>}
 

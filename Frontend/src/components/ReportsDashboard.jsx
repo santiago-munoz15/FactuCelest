@@ -1,13 +1,10 @@
-function ReportStat({ tone, icon, label, value, note }) {
-  return <article className={`reports-stat ${tone}`}><span className="reports-stat-icon">{icon}</span><div><span>{label}</span><strong>{value}</strong><small>{note}</small></div></article>;
-}
-
+import ModuleHero from "./ModuleHero";
 export default function ReportsDashboard({
   periodo, setPeriodo, desde, setDesde, hasta, setHasta,
   filtroVendedor, setFiltroVendedor, filtroCliente, setFiltroCliente,
   filtroMetodoPago, setFiltroMetodoPago, filtroEstado, setFiltroEstado, vendedores, clientes, busqueda,
-  setBusqueda, handleBuscar, loading, facturas, resumen, clientesAtendidos,
-  productosVendidos, ventasPorMes, ventasPorMetodo, totalMetodos, donutStops,
+  setBusqueda, handleBuscar, loading, facturas, resumen,
+  ventasPorMes, ventasPorMetodo, totalMetodos, donutStops,
   exportar, formatCurrency, formatDate, verFactura, descargarExcel, abrirEditor,
 }) {
   const maxVentaMes = Math.max(1, ...ventasPorMes.map((item) => item.total));
@@ -20,9 +17,8 @@ export default function ReportsDashboard({
   };
 
   return <div className="reports-content">
-      <div className="reports-heading"><div className="reports-heading-title"><span>▥</span><div><h1>Reportes</h1><p>Consulta y genera reportes de ventas, facturación y más.</p></div></div><div className="reports-heading-actions"><button className="reports-export-button" onClick={exportar}>♙ <span>Exportar reporte</span><small>⌄</small></button><button className="reports-generate-button" onClick={handleBuscar}>➤ <span>Generar reporte</span></button></div></div>
+      <ModuleHero eyebrow="Módulo de reportes" title="Reportes de ventas" description="Consulta, analiza y exporta la actividad de facturación de tu negocio." stats={[{ label: "Total facturado", value: formatCurrency(resumen.total) }, { label: "Resultados", value: facturas.length }]} toolbar={<><span className="module-hero-toolbar-note">Filtros aplicados al periodo consultado</span><div className="module-hero-controls"><button className="module-hero-secondary-action" onClick={exportar}>Exportar reporte</button><button className="module-hero-action" onClick={handleBuscar} disabled={loading}>{loading ? "Generando..." : "Generar reporte"}</button></div></>}/>
 
-      <section className="reports-stats"><ReportStat tone="green" icon="▤" label="Total Facturado" value={formatCurrency(resumen.total)} note="periodo consultado"/><ReportStat tone="blue" icon="🛒" label="Total Ventas" value={resumen.cantidad} note="facturas registradas"/><ReportStat tone="purple" icon="♟" label="Clientes Atendidos" value={clientesAtendidos} note="clientes únicos"/><ReportStat tone="orange" icon="⬡" label="Productos Vendidos" value={productosVendidos} note="unidades facturadas"/></section>
 
       <div className="reports-analytics-grid">
         <section className="reports-card reports-filters-card"><div className="reports-card-heading"><span>⚑</span><h2>Filtros de consulta</h2></div><div className="reports-filter-fields"><label>Periodo<select value={periodo} onChange={(event) => setPeriodo(event.target.value)}><option value="mes">Mes actual</option><option value="dia">Hoy</option><option value="todos">Todas las fechas</option><option value="rango">Rango personalizado</option></select></label>{periodo === "rango" && <div className="reports-date-range"><label>Desde<input type="date" value={desde} onChange={(event) => setDesde(event.target.value)}/></label><label>Hasta<input type="date" value={hasta} onChange={(event) => setHasta(event.target.value)}/></label></div>}<label>Vendedor<select value={filtroVendedor} onChange={(event) => setFiltroVendedor(event.target.value)}><option value="">Todos</option>{vendedores.map((item) => <option key={item.IdVendedor} value={item.Nombre}>{item.Nombre}</option>)}</select></label><label>Cliente<select value={filtroCliente} onChange={(event) => setFiltroCliente(event.target.value)}><option value="">Todos</option>{clientes.map((item) => <option key={item.Documento} value={item.Documento}>{item.Nombre}</option>)}</select></label><label>Estado de pago<select value={filtroEstado} onChange={(event) => setFiltroEstado(event.target.value)}><option value="">Todos</option>{["Pendiente", "Abonada", "Vencida", "Pagada"].map((estado) => <option key={estado} value={estado}>{estado}</option>)}</select></label><label>Método de pago<select value={filtroMetodoPago} onChange={(event) => setFiltroMetodoPago(event.target.value)}><option value="">Todos</option>{["Efectivo", "Transferencia", "Crédito pendiente"].map((method) => <option key={method} value={method}>{method}</option>)}</select></label><label className="reports-search-field">Buscar factura o cliente<input value={busqueda} onChange={(event) => setBusqueda(event.target.value)} onKeyDown={(event) => event.key === "Enter" && handleBuscar()} placeholder="Nombre, documento o # factura"/></label><button className="reports-apply-button" onClick={handleBuscar} disabled={loading}>⌕ <span>{loading ? "Consultando..." : "Aplicar filtros"}</span></button></div></section>

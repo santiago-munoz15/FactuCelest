@@ -1,3 +1,4 @@
+import ModuleHero from "./ModuleHero";
 import { useEffect, useRef, useState } from "react";
 import ModalCliente from "./ModalCliente";
 
@@ -61,11 +62,7 @@ export default function FacturacionForm(props) {
   }, [setResultadosCliente, setResultadosVendedor]);
 
   return <div className="billing-page">
-    <nav className="billing-breadcrumb" aria-label="Ruta de navegación">
-      <span className="breadcrumb-home" aria-hidden="true">⌂</span><span>Inicio</span><b>›</b><strong>Facturación</strong>
-      <span className="billing-date"><span aria-hidden="true">▦</span><span><b>{new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</b><small>{new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</small></span></span>
-    </nav>
-    <header className="billing-heading"><span className="billing-heading-icon" aria-hidden="true">▤</span><div><h1>Facturación</h1><p>Registra nuevas facturas y gestiona clientes.</p></div></header>
+    <ModuleHero eyebrow="Módulo de facturación" title="Crear factura" description="Registra una venta, selecciona el cliente y administra sus productos y forma de pago." stats={[{ label: "Productos", value: detalle.length }, { label: "Total factura", value: currency(totales.total) }]} toolbar={<><span className="module-hero-toolbar-note">Crédito disponible hasta 30 días según la condición de pago.</span><button type="button" onClick={handleGenerarFactura} className="module-hero-action"><span aria-hidden="true">▤</span> Generar factura</button></>}/>
 
     <section className="billing-card customer-section">
       <div className="billing-section-title"><span aria-hidden="true">♟</span><h2>1. Información del cliente</h2></div>
@@ -82,7 +79,6 @@ export default function FacturacionForm(props) {
     </section>
 
     <section className="billing-bottom-grid"><article className="billing-card payment-section"><div className="billing-section-title"><span aria-hidden="true">▣</span><h2>3. Pago y observaciones</h2></div><div className="payment-fields"><label className="billing-field"><span>Condición de pago</span><select value={condicionPago} onChange={(event) => setCondicionPago(event.target.value)}><option value="Contado">Contado</option><option value="Credito30Dias">Crédito a 30 días</option></select></label>{condicionPago === "Contado" ? <label className="billing-field"><span>Medio de pago</span><select value={metodoPago} onChange={(event) => setMetodoPago(event.target.value)}><option>Efectivo</option><option>Transferencia</option></select></label> : <div className="billing-field"><label>Abono inicial (opcional)</label><div className="payment-fields"><input className="billing-number" type="number" min="0" max={totales.total} step="0.01" value={abonoInicial} onChange={(event) => setAbonoInicial(event.target.value)} placeholder="0"/><select aria-label="Medio de pago del abono inicial" value={metodoPago} onChange={(event) => setMetodoPago(event.target.value)}><option>Efectivo</option><option>Transferencia</option></select></div></div>}<label className="billing-field"><span>Observaciones (opcional)</span><textarea maxLength={500} value={observaciones} onChange={(event) => setObservaciones(event.target.value)} placeholder="Agregar observaciones de la factura..."/></label></div></article><article className="billing-card totals-card"><div className="totals-calculator" aria-hidden="true">▦</div><div className="totals-lines"><div><span>Subtotal:</span><strong>{currency(totales.subtotal)}</strong></div><div className="grand-total"><b>Total:</b><strong>{currency(totales.total)}</strong></div></div></article></section>
-    <button type="button" onClick={handleGenerarFactura} className="billing-submit"><span aria-hidden="true">▤</span> Generar factura</button>
 
     {mostrarModalCliente && <ModalCliente onClose={() => setMostrarModalCliente(false)} onClienteCreado={(nuevoCliente) => { seleccionarCliente(nuevoCliente); setMostrarModalCliente(false); }}/ >}
     {mostrarModalVendedor && <div className="billing-modal-overlay"><div className="billing-modal"><h2>Registrar vendedor</h2><label>Nombre<input value={nuevoVendedor.Nombre} onChange={(event) => setNuevoVendedor((current) => ({ ...current, Nombre: event.target.value }))} placeholder="Nombre del vendedor"/></label><label>Teléfono<input value={nuevoVendedor.Telefono} onChange={(event) => setNuevoVendedor((current) => ({ ...current, Telefono: event.target.value }))} placeholder="Teléfono"/></label><button type="button" className="billing-button blue" onClick={guardarVendedor}>Guardar vendedor</button><button type="button" className="billing-modal-cancel" onClick={() => setMostrarModalVendedor(false)}>Cancelar</button></div></div>}

@@ -1,3 +1,4 @@
+import ModuleHero from "../components/ModuleHero";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { buildApiUrl } from "../config/api";
@@ -118,18 +119,10 @@ export default function Pagos() {
   };
 
   return <main className="payments-page">
-    <nav className="payments-breadcrumb"><span>⌂</span><span>Inicio</span><b>›</b><strong>Pagos</strong></nav>
-    <header className="payments-heading"><div><span className="payments-heading-icon">$</span><div><h1>Pagos y cuentas por cobrar</h1><p>Controla saldos, abonos y fechas límite de tus facturas.</p></div></div><span className="payments-term-note">Cada factura vence 30 días después de su emisión</span></header>
+    <ModuleHero eyebrow="Módulo de pagos" title="Pagos y cuentas por cobrar" description="Controla saldos, abonos y fechas límite de tus facturas." stats={[{ label: "Saldo por cobrar", value: money(resumen.porCobrar) }, { label: "Facturas vencidas", value: facturas.filter((item) => item.Estado === "Vencida").length }]} toolbar={<><label className="module-hero-search"><span>⌕</span><input value={busqueda} onChange={(event) => setBusqueda(event.target.value)} placeholder="Buscar por cliente, documento o factura..." aria-label="Buscar pagos"/></label><div className="module-hero-controls"><select value={estado} onChange={(event) => setEstado(event.target.value)} aria-label="Filtrar por estado"><option value="">Todos los estados</option><option>Pendiente</option><option>Abonada</option><option>Vencida</option><option>Pagada</option></select><button type="button" className="module-hero-secondary-action" onClick={cargarFacturas}>Actualizar</button></div></>}/>
 
-    <section className="payments-stats">
-      <article><span className="payments-stat-icon blue">◷</span><div><small>Saldo por cobrar</small><strong>{money(resumen.porCobrar)}</strong></div></article>
-      <article><span className="payments-stat-icon red">!</span><div><small>Saldo vencido</small><strong>{money(resumen.vencido)}</strong></div></article>
-      <article><span className="payments-stat-icon green">✓</span><div><small>Abonos recibidos</small><strong>{money(resumen.abonado)}</strong></div></article>
-      <article><span className="payments-stat-icon purple">▤</span><div><small>Facturas en consulta</small><strong>{facturas.length}</strong></div></article>
-    </section>
 
     <section className="payments-list-card">
-      <div className="payments-toolbar"><label className="payments-search"><span>⌕</span><input value={busqueda} onChange={(event) => setBusqueda(event.target.value)} placeholder="Buscar por cliente, documento o factura..."/></label><select value={estado} onChange={(event) => setEstado(event.target.value)} aria-label="Filtrar por estado"><option value="">Todos los estados</option><option>Pendiente</option><option>Abonada</option><option>Vencida</option><option>Pagada</option></select><button type="button" onClick={cargarFacturas}>Actualizar</button></div>
       <div className="payments-table-scroll"><table className="payments-table"><thead><tr><th>Factura</th><th>Cliente</th><th>Emisión</th><th>Vencimiento</th><th>Total</th><th>Abonado</th><th>Saldo</th><th>Estado</th><th>Acción</th></tr></thead><tbody>
         {loading ? <tr><td colSpan="9" className="payments-empty">Cargando cuentas por cobrar...</td></tr> : facturas.length === 0 ? <tr><td colSpan="9" className="payments-empty">No hay facturas para los filtros seleccionados.</td></tr> : facturas.map((factura) => <tr key={factura.IdFactura}><td><strong>#{factura.IdFactura}</strong></td><td>{factura.NombreCliente}<small className="payments-document">{factura.DocumentoCliente}</small></td><td>{date(factura.Fecha)}</td><td>{date(factura.FechaVencimiento)}</td><td>{money(factura.Total)}</td><td>{money(factura.MontoPagado)}</td><td className="payments-balance">{money(factura.Saldo)}</td><td><span className={`payments-status ${factura.Estado.toLowerCase()}`}>{factura.Estado}</span></td><td><button className="payments-action" type="button" onClick={() => abrirFactura(factura)}>{factura.Saldo > 0 ? "Ver / abonar" : "Ver pagos"}</button></td></tr>)}
       </tbody></table></div>
